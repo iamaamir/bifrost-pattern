@@ -2,7 +2,6 @@
 name: bifrost-verifier
 description: Independent verification worker for Bifrost Patterns
 tools: read,grep,find,ls,bash
-subagentOnlyExtensions: ../extensions/worker-guard.ts
 inheritProjectContext: true
 async: true
 acceptanceRole: read-only

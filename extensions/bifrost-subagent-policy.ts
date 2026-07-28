@@ -36,7 +36,7 @@ export default function (pi: ExtensionAPI) {
     if (!project) return { block: true, reason: "Patterns target project is unavailable." };
     event.input.cwd = project;
     event.input.artifacts = false;
-    if (event.input.agent === "bifrost-implementer") {
+    if (String(event.input.agent).startsWith("bifrost-")) {
       const guard = `${process.env.BIFROST_PATTERN_ROOT}/extensions/worker-guard.ts`;
       const extensions = Array.isArray(event.input.subagentOnlyExtensions) ? event.input.subagentOnlyExtensions : [];
       event.input.subagentOnlyExtensions = [...extensions, guard];
