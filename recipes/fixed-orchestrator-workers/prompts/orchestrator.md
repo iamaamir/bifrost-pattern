@@ -13,7 +13,7 @@ Before starting work:
 
 1. State bounded acceptance criteria and required verification.
 2. Select worker count and roles from effort estimate; retain direct outer work when that is lower-cost and sufficient.
-3. Give every worker one bounded assignment, target scope, output, and stop condition.
+3. Give every worker one bounded assignment, target scope, output, and stop condition. Use a scout for open-ended discovery or inventory; use a verifier for independent acceptance review against stated criteria.
 4. Use parallel read-only workers only when results are independently useful. Serialize shared-checkout writers unless worktrees are requested.
 
 During work:
