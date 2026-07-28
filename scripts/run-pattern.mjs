@@ -58,7 +58,7 @@ if (manifest.requiresExistingBifrost && !hasConfiguredBifrost(project, sourceAge
     process.exit(1);
   }
   const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const answer = (await prompt.question("Model Foundry needs Bifrost setup.\n\nSetup installs Pi-Bifrost if needed and probes configured providers. Provider calls may consume quota.\n\n1) Set up Bifrost\n2) Exit\n\nChoose [1-2]: ")).trim();
+  const answer = (await prompt.question("Model Foundry needs Bifrost setup.\n\nSetup may install Pi-Bifrost and create project configuration.\n\n1) Set up Bifrost\n2) Exit\n\nChoose [1-2]: ")).trim();
   prompt.close();
   if (answer !== "1") process.exit(0);
   ensureBifrost({ project, agentDirectory: sourceAgentDirectory, approveProbe: true });
@@ -73,7 +73,7 @@ let bootstrap = dryRun
   : ensureBifrost({ project, agentDirectory: sourceAgentDirectory, approveProbe: yes });
 if (bootstrap.needsProbeConsent) {
   const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const answer = (await prompt.question("Bifrost must probe available models before first run. This makes provider calls and may consume quota. Continue? [y/N] ")).trim().toLowerCase();
+  const answer = (await prompt.question("Bifrost setup is required before this run. It may install Pi-Bifrost and create configuration. Continue? [y/N] ")).trim().toLowerCase();
   prompt.close();
   if (answer !== "y" && answer !== "yes") process.exit(1);
   bootstrap = ensureBifrost({ project, agentDirectory: sourceAgentDirectory, approveProbe: true });

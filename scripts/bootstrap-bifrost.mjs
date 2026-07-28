@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
@@ -23,42 +23,49 @@ export function bifrostScopes(project, agentDirectory) {
   return { user, local };
 }
 
-export function hasConfiguredBifrost(project, agentDirectory) {
+export function bifrostState(project, agentDirectory) {
   const scopes = bifrostScopes(project, agentDirectory);
-  return Boolean((scopes.user.length || scopes.local.length) && existsSync(join(project, ".pi", "bifrost.json")));
+  const hasPackage = Boolean(scopes.user.length || scopes.local.length);
+  return {
+    ...scopes,
+    duplicate: Boolean(scopes.user.length && scopes.local.length),
+    hasPackage,
+    hasConfig: existsSync(join(project, ".pi", "bifrost.json")),
+    hasProbe: existsSync(join(project, ".pi", "bifrost-probe.json")),
+  };
+}
+
+export function hasConfiguredBifrost(project, agentDirectory) {
+  const state = bifrostState(project, agentDirectory);
+  return Boolean(!state.duplicate && state.hasPackage && state.hasConfig);
 }
 
 export function ensureBifrost({ project, agentDirectory, approveProbe }) {
-  const scopes = bifrostScopes(project, agentDirectory);
-  if (scopes.user.length && scopes.local.length) {
+  const initial = bifrostState(project, agentDirectory);
+  if (initial.duplicate) {
     throw new Error("Bifrost exists in user and project scope. Remove one before running Patterns; duplicate loads create /bifrost:1.");
   }
-  if (!scopes.user.length && !scopes.local.length) {
-    runPi(project, ["install", "-l", "npm:pi-bifrost", "--approve"]);
-  }
-
-  const config = join(project, ".pi", "bifrost.json");
-  const probe = join(project, ".pi", "bifrost-probe.json");
-  if (!existsSync(config)) {
-    if (!approveProbe) return { needsProbeConsent: true, models: [] };
+  if (initial.hasConfig && initial.hasPackage) return { needsProbeConsent: false, models: modelsFromProbe(project) };
+  if (!approveProbe) return { needsProbeConsent: true, models: [] };
+  if (!initial.hasPackage) runPi(project, ["install", "-l", "npm:pi-bifrost", "--approve"]);
+  if (!initial.hasConfig) {
     runPi(project, ["--no-session", "--approve", "--print", "/bifrost init --write"]);
-    if (!existsSync(config)) {
+    if (!existsSync(join(project, ".pi", "bifrost.json"))) {
       throw new Error("Bifrost init did not write .pi/bifrost.json. Install a Pi-Bifrost version supporting /bifrost init --write.");
     }
-  } else if (!existsSync(probe) && approveProbe) {
-    runPi(project, ["--no-session", "--approve", "--print", "/bifrost probe"]);
   }
+  return { needsProbeConsent: false, models: modelsFromProbe(project) };
+}
 
-  if (existsSync(config)) {
-    const configData = JSON.parse(readFileSync(config, "utf8"));
-    configData.debug = { ...(configData.debug ?? {}), enabled: true };
-    writeFileSync(config, `${JSON.stringify(configData, null, 2)}\n`);
-  }
+export function probeBifrost(project) {
+  runPi(project, ["--no-session", "--approve", "--print", "/bifrost probe"]);
+  return modelsFromProbe(project);
+}
 
-  const models = existsSync(probe)
-    ? JSON.parse(readFileSync(probe, "utf8"))
-      .filter(entry => entry.status === "ok" && entry.provider && entry.model)
-      .map(entry => `${entry.provider}/${entry.model}`)
-    : [];
-  return { needsProbeConsent: false, models: [...new Set(models)] };
+function modelsFromProbe(project) {
+  const probe = join(project, ".pi", "bifrost-probe.json");
+  if (!existsSync(probe)) return [];
+  return [...new Set(JSON.parse(readFileSync(probe, "utf8"))
+    .filter(entry => entry.status === "ok" && entry.provider && entry.model)
+    .map(entry => `${entry.provider}/${entry.model}`))];
 }

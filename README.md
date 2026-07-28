@@ -20,7 +20,7 @@ For a project without Bifrost:
 bifrost-pattern init
 ```
 
-This explicitly asks before project-local install and provider probing. It opens no outer Pi session.
+Fresh setup explicitly asks before project-local install and optional provider probing, then opens interactive Pi in target project. Existing valid setup is left unchanged and opens Pi directly. Use `--no-open` for automation or `--probe` to refresh provider probes.
 
 ## Run
 
