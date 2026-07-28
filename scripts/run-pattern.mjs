@@ -164,7 +164,10 @@ const child = spawn("pi", command, {
   }
 });
 
-child.on("exit", code => {
+let finalizing = false;
+function finalize(code) {
+  if (finalizing) return;
+  finalizing = true;
   const events = existsSync(eventPath)
     ? readFileSync(eventPath, "utf8").trim().split("\n").filter(Boolean).map(line => JSON.parse(line))
     : [];
@@ -186,4 +189,8 @@ child.on("exit", code => {
   const outcome = code === 0 && workers.length > 0 && failedWorkers.length === 0 ? "completed" : "failed";
   writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, startedAt: JSON.parse(readFileSync(ledgerPath, "utf8")).startedAt, endedAt: new Date().toISOString(), outerModel: model, workers, activities, routes, routingVerified: failedWorkers.length === 0, outcome }, null, 2)}\n`);
   process.exit(code ?? 1);
-});
+}
+child.on("exit", finalize);
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  process.once(signal, () => child.kill(signal));
+}
