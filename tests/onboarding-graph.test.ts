@@ -33,7 +33,11 @@ test("renders system overview with primary flow and hidden component detail", ()
   assert.match(output.markdown, /## System overview/);
 });
 
-test("rejects missing overview and node system mapping", () => {
-  assert.throws(() => renderGraph({ ...graph, overview: undefined }), /overview/);
-  assert.throws(() => renderGraph({ ...graph, nodes: [{ ...graph.nodes[0], system: undefined }] }), /system/);
+test("allows model to omit overview structure and derives a safe detail view", () => {
+  const output = renderGraph({ ...graph, overview: undefined, nodes: [{ ...graph.nodes[0], system: undefined }], edges: [], flows: [] });
+  assert.match(output.html, /Components/);
+});
+
+test("rejects broken graph references", () => {
+  assert.throws(() => renderGraph({ ...graph, edges: [{ from: "missing", to: "rules" }] }), /known nodes/);
 });

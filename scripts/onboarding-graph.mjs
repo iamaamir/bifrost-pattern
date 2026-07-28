@@ -3,16 +3,36 @@ import { readFileSync, writeFileSync } from "node:fs";
 const escapeHtml = value => String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 const mermaidId = value => String(value).replaceAll(/[^a-zA-Z0-9_]/g, "_");
 
+function readable(id) {
+  return String(id).replaceAll(/[-_]+/g, " ").replaceAll(/\b\w/g, letter => letter.toUpperCase());
+}
+
+function normalize(input) {
+  const rawOverview = input.overview ?? {};
+  const nodes = input.nodes.map(node => ({ ...node, system: node.system ?? "components" }));
+  const systems = [...(rawOverview.systems ?? [])];
+  const known = new Set(systems.map(system => system.id));
+  for (const node of nodes) if (!known.has(node.system)) {
+    systems.push({ id: node.system, label: readable(node.system), purpose: "Components and evidence selected by artifact author." });
+    known.add(node.system);
+  }
+  const primaryFlow = rawOverview.primaryFlow ?? {
+    title: "Explore selected systems",
+    summary: "Start with the selected system, then inspect components and evidence.",
+    steps: systems.slice(0, Math.min(2, systems.length)).map(system => system.id),
+  };
+  return { ...input, nodes, overview: { thesis: rawOverview.thesis ?? "Explore repository systems and inspect evidence where detail is needed.", systems, primaryFlow } };
+}
+
 function validate(data) {
-  if (!data?.title || !data.overview || !Array.isArray(data.nodes) || !Array.isArray(data.edges) || !Array.isArray(data.recommendations)) throw new Error("Graph data requires title, overview, nodes, edges, and recommendations.");
+  if (!data?.title || !Array.isArray(data.nodes) || !Array.isArray(data.edges) || !Array.isArray(data.recommendations)) throw new Error("Graph data requires title, nodes, edges, and recommendations.");
   const overview = data.overview;
-  if (!overview.thesis || !Array.isArray(overview.systems) || overview.systems.length < 2 || overview.systems.length > 6 || !overview.primaryFlow?.title || !overview.primaryFlow?.summary || !Array.isArray(overview.primaryFlow.steps)) throw new Error("Overview requires thesis, 2–6 systems, and primaryFlow.");
   const systems = new Set();
   for (const system of overview.systems) {
     if (!system.id || !system.label || !system.purpose || systems.has(system.id)) throw new Error("Every overview system requires unique id, label, and purpose.");
     systems.add(system.id);
   }
-  if (overview.primaryFlow.steps.length < 2 || overview.primaryFlow.steps.some(id => !systems.has(id))) throw new Error("Primary flow must contain known systems.");
+  if (!overview.primaryFlow?.title || !overview.primaryFlow?.summary || !Array.isArray(overview.primaryFlow.steps) || overview.primaryFlow.steps.some(id => !systems.has(id))) throw new Error("Primary flow must reference known systems.");
   const nodes = new Set();
   for (const node of data.nodes) {
     if (!node.id || !node.label || !node.system || !systems.has(node.system) || !node.purpose || !Array.isArray(node.evidence) || node.evidence.length === 0 || nodes.has(node.id)) throw new Error(`Node '${node.id ?? "unknown"}' requires unique id, known system, purpose, and evidence.`);
@@ -23,7 +43,8 @@ function validate(data) {
   for (const item of data.recommendations) if (!item.title || !item.confidence || !item.why || !item.safeValidationCommand) throw new Error("Every recommendation requires title, confidence, why, and safeValidationCommand.");
 }
 
-export function renderGraph(data) {
+export function renderGraph(input) {
+  const data = normalize(input);
   validate(data);
   const { overview } = data;
   const graphData = JSON.stringify(data).replaceAll("<", "\\u003c");
