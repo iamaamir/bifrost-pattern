@@ -24,6 +24,7 @@ export function validateRecipe(recipe, directory) {
     if (!['repo-index', 'model-inventory'].includes(step.capability) || typeof step.output !== "string" || step.output.startsWith("/") || step.output.includes("..")) errors.push("preflight steps must use known capability and safe relative output");
   }
   if (recipe?.directWorkers !== undefined && (!Array.isArray(recipe.directWorkers) || !recipe.directWorkers.every(agent => typeof agent === "string"))) errors.push("directWorkers must be an array of agent names");
+  if (recipe?.requiresExistingBifrost !== undefined && typeof recipe.requiresExistingBifrost !== "boolean") errors.push("requiresExistingBifrost must be boolean");
   if (recipe?.cleanup !== undefined && recipe.cleanup?.onTerminal !== "run-artifacts") errors.push("cleanup.onTerminal must be run-artifacts");
   if (recipe?.artifactReview !== undefined) {
     const review = recipe.artifactReview;

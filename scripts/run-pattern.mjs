@@ -4,7 +4,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
-import { ensureBifrost } from "./bootstrap-bifrost.mjs";
+import { ensureBifrost, hasConfiguredBifrost } from "./bootstrap-bifrost.mjs";
 import { ensureSubagents } from "./bootstrap-subagents.mjs";
 import { resolveRecipe } from "./recipe-resolver.mjs";
 import { collectRecipeInputs, renderInitialMessage, resolveRecipeInputs } from "./recipe-inputs.mjs";
@@ -52,6 +52,10 @@ const recipeInputs = dryRun
 const initialMessage = renderInitialMessage(manifest, recipeInputs);
 
 const sourceAgentDirectory = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
+if (manifest.requiresExistingBifrost && !hasConfiguredBifrost(project, sourceAgentDirectory)) {
+  console.error("This recipe requires existing project Bifrost setup. Install Pi-Bifrost and run /bifrost init before Model Foundry; it will not initialize or modify Bifrost for you.");
+  process.exit(1);
+}
 const subagents = dryRun ? undefined : ensureSubagents({ project, agentDirectory: sourceAgentDirectory });
 let bootstrap = dryRun
   ? { needsProbeConsent: false, models: [] }

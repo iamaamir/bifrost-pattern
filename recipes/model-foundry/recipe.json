@@ -28,6 +28,7 @@
   ],
   "directWorkers": ["bifrost-model-evaluator", "bifrost-model-artifact-evaluator"],
   "cleanup": { "onTerminal": "run-artifacts" },
+  "requiresExistingBifrost": true,
   "requires": {
     "bifrost": "Installed and configured in target project",
     "manualAssumptions": [

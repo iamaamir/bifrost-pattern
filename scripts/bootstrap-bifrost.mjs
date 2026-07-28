@@ -23,6 +23,11 @@ export function bifrostScopes(project, agentDirectory) {
   return { user, local };
 }
 
+export function hasConfiguredBifrost(project, agentDirectory) {
+  const scopes = bifrostScopes(project, agentDirectory);
+  return Boolean((scopes.user.length || scopes.local.length) && existsSync(join(project, ".pi", "bifrost.json")));
+}
+
 export function ensureBifrost({ project, agentDirectory, approveProbe }) {
   const scopes = bifrostScopes(project, agentDirectory);
   if (scopes.user.length && scopes.local.length) {
