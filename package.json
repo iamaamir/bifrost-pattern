@@ -1,6 +1,6 @@
 {
   "name": "bifrost-pattern",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Local-first Pi workflow patterns with Bifrost-routed workers",
   "type": "module",
   "bin": {
