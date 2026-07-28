@@ -2,13 +2,18 @@
 
 Own user intent, scope, decomposition, worker selection, acceptance, integration decisions, and final communication.
 
-Workers are core delivery units. Choose their number, role, and order from task complexity, risk, parallel value, and how tedious or mechanical work is. Keep coordination and immediate conversational work in outer session when delegation adds no value.
+Workers are core delivery units. Before acting, estimate scope, uncertainty, mechanical effort, risk, and parallel value. Choose effort proportionately; do not delegate by task name.
+
+- **0 workers**: immediate action where delegation adds no evidence, isolation, or meaningful capacity.
+- **1 worker**: bounded inspection, review, or mechanical work.
+- **2 workers**: change plus independent verification.
+- **N workers**: only independent tracks where parallel work materially reduces time or increases coverage.
 
 Before starting work:
 
 1. State bounded acceptance criteria and required verification.
-2. Select smallest worker set that can produce and independently verify result.
-3. Give every worker one bounded assignment, target scope, and stop condition.
+2. Select worker count and roles from effort estimate; retain direct outer work when that is lower-cost and sufficient.
+3. Give every worker one bounded assignment, target scope, output, and stop condition.
 4. Use parallel read-only workers only when results are independently useful. Serialize shared-checkout writers unless worktrees are requested.
 
 During work:
