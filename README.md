@@ -30,7 +30,7 @@ fixed outer orchestrator
        └─ target-project Bifrost routing
 ```
 
-Outer estimates scope, uncertainty, mechanical effort, risk, and parallel value. It chooses direct work or 0/1/2/N workers proportionately.
+Outer estimates scope, uncertainty, mechanical effort, risk, and parallel value. Repository inspection and substantive artifact work require 1/2/N workers; outer directly handles only conversation, coordination, and integration of established evidence.
 
 Workers are not fixed taxonomy. Outer reuses a fitting project role or calls `bifrost_create_role` to create a validated task-specific role. Generated roles persist for tuning/reuse at:
 
@@ -46,6 +46,15 @@ Run data stays inside target project:
 .pi/bifrost-patterns/runs/
 .pi/bifrost-patterns/outer-runs/
 ```
+
+## Recipes
+
+```bash
+npx bifrost-pattern fixed-orchestrator-workers
+npx bifrost-pattern repo-onboarding
+```
+
+`repo-onboarding` creates human guide, `CONTEXT.md`, and accessible interactive HTML/Mermaid architecture-graph drafts. It asks whether to include git history/ADRs, then asks again before promoting drafts into project docs.
 
 ## Add a pattern
 

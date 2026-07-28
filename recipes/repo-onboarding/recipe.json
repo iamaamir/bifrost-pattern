@@ -1,0 +1,29 @@
+{
+  "id": "repo-onboarding",
+  "version": 1,
+  "status": "experimental",
+  "runtime": "pi",
+  "summary": "Evidence-backed human onboarding drafts with an explicit project-doc promotion gate.",
+  "outer": {
+    "prompt": "prompts/orchestrator.md",
+    "model": "explicit"
+  },
+  "requires": {
+    "bifrost": "Installed and configured in target project workers",
+    "manualAssumptions": [
+      "User chooses source-only or source plus git history/ADRs before discovery.",
+      "Project-document changes require explicit user approval after draft review."
+    ]
+  },
+  "safety": {
+    "automaticPromptReplay": false,
+    "workerMutatingGit": false,
+    "orchestratorOwnsGitIntegration": true
+  },
+  "acceptance": [
+    "Facts include relative repository-path evidence.",
+    "Recommendations are clearly separate from facts and include confidence and validation.",
+    "Drafts include a human guide, CONTEXT.md, and accessible static HTML plus Mermaid architecture graph.",
+    "No project documentation is created or modified before explicit user approval."
+  ]
+}

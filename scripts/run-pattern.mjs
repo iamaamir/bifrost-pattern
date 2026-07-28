@@ -134,6 +134,7 @@ const outerPrompt = `${orchestratorPrompt}
 ## Current run
 Project path: ${project}
 Recipe: ${recipe}
+Run artifact directory: ${runDirectory}
 Use Pi-subagents subagent tool for repository work. Its policy pins every child to target project and disables project artifacts. Do not use local run directory as a substitute for project evidence.`;
 const outerTools = option("--outer-tools") ?? "read,grep,find,ls,write,edit,bash,bifrost_create_role,subagent,subagent_wait";
 const command = [
