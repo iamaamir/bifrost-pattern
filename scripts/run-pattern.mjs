@@ -75,7 +75,13 @@ if (!model) {
 const id = `${new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-")}-${basename(project)}`;
 const runDirectory = join(root, "runs", id);
 const outerDirectory = join(runDirectory, "outer");
+const ledgerDirectory = join(project, ".pi", "bifrost-patterns", "runs");
+const ledgerPath = join(ledgerDirectory, `${id}.json`);
+const eventPath = join(ledgerDirectory, `${id}.events.jsonl`);
 mkdirSync(outerDirectory, { recursive: true });
+mkdirSync(ledgerDirectory, { recursive: true });
+
+writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, startedAt: new Date().toISOString(), outerModel: model, workers: [], routes: [], outcome: "running" }, null, 2)}\n`);
 
 writeFileSync(join(runDirectory, "feedback.json"), `${JSON.stringify({
   recipe,
@@ -148,8 +154,22 @@ const child = spawn("pi", command, {
     BIFROST_PATTERN_ROOT: root,
     BIFROST_PATTERN_RUN_DIRECTORY: runDirectory,
     PI_CODING_AGENT_DIR: outerAgentDirectory,
-    PI_SUBAGENT_EXTRA_AGENT_DIRS: join(root, "agents")
+    PI_SUBAGENT_EXTRA_AGENT_DIRS: join(root, "agents"),
+    BIFROST_PATTERN_RUN_ID: id,
+    BIFROST_PATTERN_EVENT_PATH: eventPath
   }
 });
 
-child.on("exit", code => process.exit(code ?? 1));
+child.on("exit", code => {
+  const events = existsSync(eventPath)
+    ? readFileSync(eventPath, "utf8").trim().split("\n").filter(Boolean).map(line => JSON.parse(line))
+    : [];
+  const debugPath = join(project, ".pi", "bifrost-debug.jsonl");
+  const routes = existsSync(debugPath)
+    ? readFileSync(debugPath, "utf8").trim().split("\n").filter(Boolean).map(line => JSON.parse(line))
+      .filter(entry => entry.pattern_run_id === id)
+      .map(entry => ({ at: entry.ts, module: entry.module, event: entry.event, tier: entry.tier ?? entry.selectedTier, model: entry.model, fallbackReason: entry.fallbackReason }))
+    : [];
+  writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, startedAt: JSON.parse(readFileSync(ledgerPath, "utf8")).startedAt, endedAt: new Date().toISOString(), outerModel: model, workers: events, routes, outcome: code === 0 ? "completed" : "failed" }, null, 2)}\n`);
+  process.exit(code ?? 1);
+});

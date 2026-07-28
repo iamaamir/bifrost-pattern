@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
@@ -42,6 +42,12 @@ export function ensureBifrost({ project, agentDirectory, approveProbe }) {
     }
   } else if (!existsSync(probe) && approveProbe) {
     runPi(project, ["--no-session", "--approve", "--print", "/bifrost probe"]);
+  }
+
+  if (existsSync(config)) {
+    const configData = JSON.parse(readFileSync(config, "utf8"));
+    configData.debug = { ...(configData.debug ?? {}), enabled: true };
+    writeFileSync(config, `${JSON.stringify(configData, null, 2)}\n`);
   }
 
   const models = existsSync(probe)
