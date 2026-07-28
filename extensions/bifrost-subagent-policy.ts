@@ -24,8 +24,6 @@ export default function (pi: ExtensionAPI) {
       state: data.state,
       success: data.success === true,
       durationMs: data.durationMs,
-      model: data.model,
-      attemptedModels: data.attemptedModels,
       errorKind: errorKind(data.error),
     });
   });
@@ -36,11 +34,14 @@ export default function (pi: ExtensionAPI) {
     if (!project) return { block: true, reason: "Patterns target project is unavailable." };
     event.input.cwd = project;
     event.input.artifacts = false;
-    if (String(event.input.agent).startsWith("bifrost-")) {
+    const agent = typeof event.input.agent === "string" ? event.input.agent : undefined;
+    if (agent?.startsWith("bifrost-")) {
       const guard = `${process.env.BIFROST_PATTERN_ROOT}/extensions/worker-guard.ts`;
       const extensions = Array.isArray(event.input.subagentOnlyExtensions) ? event.input.subagentOnlyExtensions : [];
       event.input.subagentOnlyExtensions = [...extensions, guard];
+      record({ type: "worker_requested", agent });
+      return;
     }
-    record({ type: "worker_requested", agent: String(event.input.agent ?? "unknown"), action: event.input.action });
+    record({ type: "subagent_activity", action: event.input.action ?? "run" });
   });
 }

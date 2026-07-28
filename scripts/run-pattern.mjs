@@ -174,10 +174,16 @@ child.on("exit", code => {
       .filter(entry => entry.pattern_run_id === id)
       .map(entry => ({ at: entry.ts, subagentRunId: entry.subagent_run_id, module: entry.module, event: entry.event, tier: entry.tier ?? entry.selectedTier, model: entry.model, fallbackReason: entry.fallbackReason }))
     : [];
-  const terminalWorkers = events.filter(event => event.type === "worker_terminal");
-  const routedWorkers = new Set(routes.filter(route => route.event === "total" && route.subagentRunId).map(route => route.subagentRunId));
-  const failedWorkers = terminalWorkers.filter(worker => worker.success !== true || !routedWorkers.has(worker.runId));
-  const outcome = code === 0 && failedWorkers.length === 0 ? "completed" : "failed";
-  writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, startedAt: JSON.parse(readFileSync(ledgerPath, "utf8")).startedAt, endedAt: new Date().toISOString(), outerModel: model, workers: events, routes, routingVerified: failedWorkers.length === 0, outcome }, null, 2)}\n`);
+  const workers = events.filter(event => event.type === "worker_terminal").map(worker => {
+    const route = routes.find(candidate => candidate.event === "total" && candidate.subagentRunId === worker.runId);
+    return {
+      ...worker,
+      routing: route ? { verified: true, model: route.model, tier: route.tier } : { verified: false },
+    };
+  });
+  const activities = events.filter(event => event.type !== "worker_terminal");
+  const failedWorkers = workers.filter(worker => worker.success !== true || worker.routing.verified !== true);
+  const outcome = code === 0 && workers.length > 0 && failedWorkers.length === 0 ? "completed" : "failed";
+  writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, startedAt: JSON.parse(readFileSync(ledgerPath, "utf8")).startedAt, endedAt: new Date().toISOString(), outerModel: model, workers, activities, routes, routingVerified: failedWorkers.length === 0, outcome }, null, 2)}\n`);
   process.exit(code ?? 1);
 });
