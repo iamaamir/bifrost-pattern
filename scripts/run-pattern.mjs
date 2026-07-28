@@ -53,8 +53,19 @@ const initialMessage = renderInitialMessage(manifest, recipeInputs);
 
 const sourceAgentDirectory = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
 if (manifest.requiresExistingBifrost && !hasConfiguredBifrost(project, sourceAgentDirectory)) {
-  console.error("This recipe requires existing project Bifrost setup. Install Pi-Bifrost and run /bifrost init before Model Foundry; it will not initialize or modify Bifrost for you.");
-  process.exit(1);
+  if (dryRun) {
+    console.error("This recipe requires existing project Bifrost setup. Run: bifrost-pattern init");
+    process.exit(1);
+  }
+  const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const answer = (await prompt.question("Model Foundry requires project Bifrost setup. 1) Set up now (installs/probes, may consume quota)  2) Exit\nChoose [1-2]: ")).trim();
+  prompt.close();
+  if (answer !== "1") process.exit(0);
+  ensureBifrost({ project, agentDirectory: sourceAgentDirectory, approveProbe: true });
+  if (!hasConfiguredBifrost(project, sourceAgentDirectory)) {
+    console.error("Bifrost setup did not produce usable project configuration.");
+    process.exit(1);
+  }
 }
 const subagents = dryRun ? undefined : ensureSubagents({ project, agentDirectory: sourceAgentDirectory });
 let bootstrap = dryRun
