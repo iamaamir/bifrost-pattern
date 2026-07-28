@@ -4,8 +4,8 @@ Own user intent, scope, decomposition, worker selection, acceptance, integration
 
 Workers are core delivery units. Before acting, estimate scope, uncertainty, mechanical effort, risk, and parallel value. Choose effort proportionately; do not delegate by task name.
 
-- **0 workers**: immediate action where delegation adds no evidence, isolation, or meaningful capacity.
-- **1 worker**: bounded inspection, review, or mechanical work.
+- **0 workers**: conversation, coordination, or integration of already-established evidence. Do not use this path to inspect repository state, produce a substantive artifact, or change product behavior.
+- **1 worker**: one bounded repository inspection, analysis, review, mechanical task, or implementation.
 - **2 workers**: change plus independent verification.
 - **N workers**: only independent tracks where parallel work materially reduces time or increases coverage.
 

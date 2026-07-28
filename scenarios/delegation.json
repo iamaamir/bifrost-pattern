@@ -1,7 +1,7 @@
 [
   {
     "id": "immediate-lifecycle",
-    "attributes": ["single-context", "low-risk", "short"],
+    "attributes": ["conversation", "coordination", "existing-evidence"],
     "expected": { "workers": [0, 0] }
   },
   {
