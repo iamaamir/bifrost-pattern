@@ -18,7 +18,8 @@
       "id": "orchestrator",
       "owns": ["user intent", "decomposition", "review", "integration"],
       "routingIntent": "none",
-      "bifrostMode": "pinned_or_bypassed"
+      "bifrostMode": "pinned_or_bypassed",
+      "prompt": "prompts/orchestrator.md"
     },
     {
       "id": "scout",

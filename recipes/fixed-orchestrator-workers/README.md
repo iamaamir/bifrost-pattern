@@ -22,11 +22,12 @@ workers: Bifrost normal routing
 ## Setup
 
 1. Install/configure Bifrost in target project normally.
-2. Start outer orchestrator with explicitly selected model; pin or bypass Bifrost in that outer session using public Bifrost/Pi controls.
-3. Launch workers in target project. Verify each worker loads project Bifrost configuration before relying on this recipe.
-4. Give each worker one bounded brief from `prompts/`.
-5. Orchestrator alone reviews, integrates, and performs mutating Git operations.
-6. Create local feedback template:
+2. Start outer orchestrator with explicitly selected model; pin or bypass Bifrost in that outer session using public Bifrost/Pi controls. Pinning controls routing only.
+3. Load [`prompts/orchestrator.md`](prompts/orchestrator.md) into outer session. It supplies delegation-only behavior: outer decides and reviews but does not inspect, edit, test, or execute repository work.
+4. Launch workers in target project. Verify each worker loads project Bifrost configuration before relying on this recipe.
+5. Give each worker one bounded brief from `prompts/`.
+6. Orchestrator alone reviews, integrates, and performs mutating Git operations after worker evidence.
+7. Create local feedback template:
 
 ```bash
 npm run run:new -- fixed-orchestrator-workers /absolute/path/to/project
