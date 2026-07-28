@@ -29,6 +29,18 @@ test("builds compact local repository map without source contents", () => {
   rmSync(project, { recursive: true, force: true });
 });
 
+test("uses installed ast-grep outline without storing source text", () => {
+  const project = fixture();
+  const run = (_command: string, args: string[]) => args[0] === "--version"
+    ? { status: 0, stdout: "ast-grep 0.45.0" }
+    : { status: 0, stdout: JSON.stringify({ items: [{ file: "src/index.ts", name: "serve", symbolType: "function", range: { start: { line: 0 } }, text: "export function serve() {}" }] }) };
+  const index = buildRepoIndex({ project, cachePath: join(project, ".cache.json"), run });
+  assert.equal(index.capabilities.astGrep.status, "available");
+  assert.deepEqual(index.capabilities.astGrep.symbols, [{ file: "src/index.ts", name: "serve", kind: "function", line: 0 }]);
+  assert.doesNotMatch(JSON.stringify(index.capabilities.astGrep), /export function serve/);
+  rmSync(project, { recursive: true, force: true });
+});
+
 test("reuses index when file fingerprints match", () => {
   const project = fixture();
   const cachePath = join(project, ".cache.json");

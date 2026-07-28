@@ -6,7 +6,7 @@ Discovery scope comes from recipe preflight in initial user message. Do not ask 
 
 ## Discovery
 
-Read `repo-index` from Current run preflight artifacts before launching workers. It is a local deterministic map: file counts, manifests, entry/test candidates, and bounded import edges. Use it to target worker evidence reads; do not dump or summarize whole source trees. Index is orientation only, never evidence: workers must verify final claims against referenced repository paths.
+Read `repo-index` from Current run preflight artifacts before launching workers. It is a local deterministic map: file counts, manifests, entry/test candidates, bounded import edges, and optional ast-grep symbols when installed. Use it to target worker evidence reads; do not dump or summarize whole source trees. Index is orientation only, never evidence: workers must verify final claims against referenced repository paths. If `capabilities.astGrep.status` is `available`, use its symbols to focus discovery; if unavailable or failed, continue without it.
 
 Create task-specific, read-only roles through `bifrost_create_role`, then launch independent workers in parallel:
 
