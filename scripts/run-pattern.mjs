@@ -10,6 +10,7 @@ import { resolveRecipe } from "./recipe-resolver.mjs";
 import { collectRecipeInputs, renderInitialMessage, resolveRecipeInputs } from "./recipe-inputs.mjs";
 import { buildRepoIndex } from "./repo-index.mjs";
 import { ensureAstGrep } from "./bootstrap-ast-grep.mjs";
+import { buildModelInventory } from "./model-inventory.mjs";
 
 const [recipe, possibleProject, ...remaining] = process.argv.slice(2);
 const projectArg = possibleProject && !possibleProject.startsWith("-") ? possibleProject : ".";
@@ -126,6 +127,14 @@ if (!dryRun) for (const step of manifest.preflight ?? []) {
     preflightArtifacts[step.capability] = output;
     console.log(`Preflight repo index: ${output} (${index.cacheHit ? "cache hit" : "built"}; ast-grep ${index.capabilities.astGrep.status})`);
   }
+  if (step.capability === "model-inventory") {
+    const output = join(runDirectory, step.output);
+    const inventory = buildModelInventory(project);
+    mkdirSync(dirname(output), { recursive: true });
+    writeFileSync(output, `${JSON.stringify(inventory, null, 2)}\n`, { mode: 0o600 });
+    preflightArtifacts[step.capability] = output;
+    console.log(`Preflight model inventory: ${output} (${inventory.candidates.length} configured candidates)`);
+  }
 }
 
 writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, startedAt: new Date().toISOString(), outerModel: model, workers: [], routes: [], outcome: "running" }, null, 2)}\n`);
@@ -183,6 +192,7 @@ const command = [
   "--model", model,
   "--extension", join(root, "extensions", "bifrost-subagent-policy.ts"),
   "--extension", join(root, "extensions", "role-compiler.ts"),
+  "--extension", join(root, "extensions", "model-foundry-policy.ts"),
   "--tools", outerTools,
   "--append-system-prompt", outerPrompt,
   "--session-dir", join(runDirectory, "sessions")
@@ -207,6 +217,7 @@ const child = spawn("pi", command, {
     BIFROST_PATTERN_PROJECT: project,
     BIFROST_PATTERN_ROOT: root,
     BIFROST_PATTERN_RUN_DIRECTORY: runDirectory,
+    BIFROST_PATTERN_OUTER_DIRECTORY: outerDirectory,
     PI_CODING_AGENT_DIR: outerAgentDirectory,
     PI_SUBAGENT_EXTRA_AGENT_DIRS: join(root, "agents"),
     BIFROST_PATTERN_RUN_ID: id,
@@ -235,6 +246,8 @@ function finalize(code) {
     };
   });
   const activities = events.filter(event => event.type !== "worker_terminal");
+  const directWorkers = new Set(manifest.directWorkers ?? []);
+  for (const worker of workers) if (directWorkers.has(worker.agent)) worker.routing = { verified: Boolean(worker.model), direct: true, model: worker.model };
   const failedWorkers = workers.filter(worker => worker.success !== true || worker.routing.verified !== true);
   const outcome = code === 0 && workers.length > 0 && failedWorkers.length === 0 ? "completed" : "failed";
   writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, startedAt: JSON.parse(readFileSync(ledgerPath, "utf8")).startedAt, endedAt: new Date().toISOString(), outerModel: model, workers, activities, routes, routingVerified: failedWorkers.length === 0, outcome }, null, 2)}\n`);

@@ -52,9 +52,12 @@ Run data stays inside target project:
 ```bash
 npx bifrost-pattern fixed-orchestrator-workers
 npx bifrost-pattern repo-onboarding
+npx bifrost-pattern model-foundry
 ```
 
 `repo-onboarding` creates human guide, `CONTEXT.md`, and accessible interactive HTML/Mermaid architecture-graph drafts. Before Pi opens, runner asks whether to include git history/ADRs; Pi then starts work immediately. It builds a local, cached deterministic repo index so workers target evidence files rather than dump source trees. It asks again before promoting drafts into project docs.
+
+`model-foundry` evaluates only models already present in project Bifrost config against a user-selected or custom work contract. It produces a local scorecard and additive config proposal, never writes Bifrost config without explicit approval.
 
 ## Add a pattern
 

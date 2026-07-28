@@ -25,6 +25,7 @@ export default function (pi: ExtensionAPI) {
       success: data.success === true,
       durationMs: data.durationMs,
       errorKind: errorKind(data.error),
+      model: data.model,
     });
   });
 

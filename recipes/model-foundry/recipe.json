@@ -1,0 +1,48 @@
+{
+  "id": "model-foundry",
+  "version": 1,
+  "status": "experimental",
+  "runtime": "pi",
+  "summary": "Evaluates existing configured models against a bounded specialization contract and proposes a Bifrost tier without changing configuration.",
+  "outer": {
+    "prompt": "prompts/orchestrator.md",
+    "model": "explicit",
+    "initialMessage": "Start Model Foundry. Requested specialization preset: {{specialization}}."
+  },
+  "inputs": [
+    {
+      "id": "specialization",
+      "prompt": "What work should this model pool optimize for",
+      "options": [
+        { "value": "product-ui", "label": "Product UI / frontend" },
+        { "value": "debugging", "label": "Debugging / root cause analysis" },
+        { "value": "code-review", "label": "Code review" },
+        { "value": "testing", "label": "Testing / verification" },
+        { "value": "architecture", "label": "Architecture / planning" },
+        { "value": "custom", "label": "Custom" }
+      ]
+    }
+  ],
+  "preflight": [
+    { "capability": "model-inventory", "output": "model-foundry/model-inventory.json" }
+  ],
+  "directWorkers": ["bifrost-model-evaluator"],
+  "requires": {
+    "bifrost": "Installed and configured in target project",
+    "manualAssumptions": [
+      "Candidate evaluation makes provider calls only after user consent.",
+      "Proposal requires explicit user approval before any config edit."
+    ]
+  },
+  "safety": {
+    "automaticPromptReplay": false,
+    "workerMutatingGit": false,
+    "orchestratorOwnsGitIntegration": true
+  },
+  "acceptance": [
+    "Only models already configured in project Bifrost config are evaluated.",
+    "Each candidate runs explicit read-only tasks with explicit model selection.",
+    "Proposal reports evidence, uncertainty, reliability, cost/latency when observed, and no universal capability claim.",
+    "Project Bifrost config remains unchanged without explicit user approval."
+  ]
+}
