@@ -1,73 +1,57 @@
-# Bifrost Patterns Lab
+# Bifrost Pattern
 
-Versioned, local-first workflow recipes that compose existing agent tools with [Pi-Bifrost](https://github.com/iamaamir/pi-bifrost).
+Local-first workflow runner for [Pi-Bifrost](https://github.com/iamaamir/pi-bifrost) and [Pi-subagents](https://www.npmjs.com/package/pi-subagents).
 
-This repository is **not** a Bifrost extension and does not modify Bifrost internals. Bifrost remains a routing primitive: it selects a configured model, persists reliability state, and exposes user controls. Recipes own workflow topology, prompts, evaluation, and local feedback.
+Bifrost remains routing primitive. Pattern owns orchestration, worker lifecycle, local evidence, and task-specific role creation.
 
-## First pattern
-
-[`fixed-orchestrator-workers`](recipes/fixed-orchestrator-workers/) keeps an outer orchestrator on an explicitly chosen fixed model while Pi worker sessions use their normal project Bifrost configuration.
-
-```text
-fixed/pinned orchestrator
-  ├─ scout worker       → optional quick intent
-  ├─ implement worker   → normal routing
-  └─ verify worker      → optional quick/general intent
-```
-
-The orchestrator owns scope, delegation, review, and integration. Bifrost owns model selection within worker turns.
-
-## Run a pattern
-
-Install Patterns once during local development:
+## Install
 
 ```bash
-cd /Users/mak/git/bifrost-patterns
-npm link
+npm install -g bifrost-pattern
+pi install npm:pi-subagents
 ```
 
-Then run from target project. Current directory is target; no project path is required:
+## Run
+
+From target project:
 
 ```bash
 bifrost-pattern fixed-orchestrator-workers
 ```
 
-One command opens one outer Pi session. Pi-subagents owns async child processes, FleetView progress, completion batching, and worktree isolation; Patterns supplies Bifrost-specific roles and outer/worker separation.
+First run probes Bifrost models with consent, then asks for fixed outer `provider/model`. Chosen model is saved in target `.bifrost-patterns.json`.
 
-On first run, runner prints `pi --list-models`, asks for an orchestrator `provider/model`, and saves that user-chosen value in target `.bifrost-patterns.json`. Pass it directly to avoid prompt:
+## Model
 
-```bash
-bifrost-pattern fixed-orchestrator-workers \
-  --orchestrator-model provider/model
+```text
+fixed outer orchestrator
+  └─ task-shaped Pi-subagent workers
+       └─ target-project Bifrost routing
 ```
 
-Install Pi-subagents once first:
+Outer estimates scope, uncertainty, mechanical effort, risk, and parallel value. It chooses direct work or 0/1/2/N workers proportionately.
 
-```bash
-pi install npm:pi-subagents
+Workers are not fixed taxonomy. Outer reuses a fitting project role or calls `bifrost_create_role` to create a validated task-specific role. Generated roles persist for tuning/reuse at:
+
+```text
+.pi/bifrost-patterns/agents/<role>.md
 ```
 
-Runner creates isolated outer Pi profile: it preserves configured user extensions and Pi-subagents while filtering package sources containing `pi-bifrost`. Bifrost loads only in worker processes, which use target project's normal Pi configuration. Pi-subagents keeps private temporary lifecycle/session state for async recovery and FleetView; Patterns sends no telemetry and creates no repository artifacts by default.
+Patterns enforces target CWD, generic worker Git guard, Bifrost route correlation, and redacted local lifecycle ledger. No remote telemetry. It never stores prompts, provider responses, credentials, file contents, or tool output.
 
-## Local-first feedback
+Run data stays inside target project:
 
-Runs live under `runs/` in this repository. They record recipe ID, role, worker result, and human verdict. Patterns sends no telemetry and stores no prompt/provider-response data. Pi-subagents maintains private temporary local lifecycle/session state for active worker recovery.
+```text
+.pi/bifrost-patterns/runs/
+.pi/bifrost-patterns/outer-runs/
+```
+
+## Validation
 
 ```bash
+npm test
 npm run recipe:validate
-npm run run:new -- fixed-orchestrator-workers /path/to/project
+npm run delegation:validate
 ```
 
-`run:new` creates a manual template. `pattern:run` is the normal one-command runner.
-
-## Recipe contract
-
-Every recipe declares:
-
-- required public primitives and manual assumptions;
-- topology and role boundaries;
-- routing intent as a hint, never a hardcoded provider/model;
-- safety rules and acceptance checks;
-- local feedback shape.
-
-See [`AGENTS.md`](AGENTS.md) for contributor rules.
+See [`docs/delegation-tuning.md`](docs/delegation-tuning.md) for local effort-tuning loop.

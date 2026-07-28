@@ -1,11 +1,30 @@
 {
-  "name": "bifrost-patterns",
-  "private": true,
-  "version": "0.0.0",
+  "name": "bifrost-pattern",
+  "version": "0.1.0",
+  "description": "Local-first Pi workflow patterns with Bifrost-routed workers",
   "type": "module",
   "bin": {
     "bifrost-pattern": "bin/bifrost-pattern.mjs"
   },
+  "files": [
+    "AGENTS.md",
+    "README.md",
+    "agents",
+    "bin",
+    "docs",
+    "extensions",
+    "recipes",
+    "role-contract.ts",
+    "scenarios",
+    "schemas",
+    "scripts"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamaamir/bifrost-pattern.git"
+  },
+  "keywords": ["pi", "bifrost", "agents", "subagents", "workflows"],
+  "license": "MIT",
   "scripts": {
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "recipe:validate": "node scripts/validate-recipe.mjs",

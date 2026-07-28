@@ -73,7 +73,7 @@ if (!model) {
 }
 
 const id = `${new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-")}-${basename(project)}`;
-const runDirectory = join(root, "runs", id);
+const runDirectory = join(project, ".pi", "bifrost-patterns", "outer-runs", id);
 const outerDirectory = join(runDirectory, "outer");
 const ledgerDirectory = join(project, ".pi", "bifrost-patterns", "runs");
 const ledgerPath = join(ledgerDirectory, `${id}.json`);
