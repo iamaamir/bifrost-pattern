@@ -79,6 +79,8 @@ const ledgerDirectory = join(project, ".pi", "bifrost-patterns", "runs");
 const ledgerPath = join(ledgerDirectory, `${id}.json`);
 const eventPath = join(ledgerDirectory, `${id}.events.jsonl`);
 mkdirSync(outerDirectory, { recursive: true });
+mkdirSync(join(outerDirectory, ".pi"), { recursive: true });
+writeFileSync(join(outerDirectory, ".pi", "bifrost.json"), `${JSON.stringify({ enabled: false }, null, 2)}\n`);
 mkdirSync(ledgerDirectory, { recursive: true });
 
 writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, startedAt: new Date().toISOString(), outerModel: model, workers: [], routes: [], outcome: "running" }, null, 2)}\n`);
@@ -113,7 +115,6 @@ function createOuterAgentDirectory(runDirectory) {
   if (!(settings.packages ?? []).some(entry => String(entry).toLowerCase().includes("pi-subagents"))) {
     throw new Error("Pi-subagents is required. Run: pi install npm:pi-subagents");
   }
-  settings.packages = (settings.packages ?? []).filter(entry => !String(entry).toLowerCase().includes("pi-bifrost"));
   writeFileSync(join(target, "settings.json"), `${JSON.stringify(settings, null, 2)}\n`);
   return target;
 }
@@ -137,8 +138,7 @@ const command = [
 console.log(`\nPatterns run: ${runDirectory}`);
 console.log(`Outer model: ${model}`);
 console.log("Workers load target project's normal Pi/Bifrost resources.");
-console.log("Outer profile preserves user extensions but excludes configured Bifrost packages.");
-console.log("Workers load normal target project configuration.\n");
+console.log("Outer loads Bifrost disabled; workers load target-project Bifrost configuration.\n");
 
 if (dryRun) {
   console.log(`Dry run: (cwd ${outerDirectory}) pi ${command.map(arg => JSON.stringify(arg)).join(" ")}`);
