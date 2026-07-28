@@ -6,8 +6,19 @@
   "summary": "Evidence-backed human onboarding drafts with an explicit project-doc promotion gate.",
   "outer": {
     "prompt": "prompts/orchestrator.md",
-    "model": "explicit"
+    "model": "explicit",
+    "initialMessage": "Start repo onboarding now. Discovery scope: {{discoveryScope}}."
   },
+  "inputs": [
+    {
+      "id": "discoveryScope",
+      "prompt": "Discovery scope",
+      "options": [
+        { "value": "source-only", "label": "Source only" },
+        { "value": "source-history-adrs", "label": "Source, git history, and ADRs" }
+      ]
+    }
+  ],
   "requires": {
     "bifrost": "Installed and configured in target project workers",
     "manualAssumptions": [

@@ -7,6 +7,7 @@ import readline from "node:readline/promises";
 import { ensureBifrost } from "./bootstrap-bifrost.mjs";
 import { ensureSubagents } from "./bootstrap-subagents.mjs";
 import { resolveRecipe } from "./recipe-resolver.mjs";
+import { collectRecipeInputs, renderInitialMessage, resolveRecipeInputs } from "./recipe-inputs.mjs";
 
 const [recipe, possibleProject, ...remaining] = process.argv.slice(2);
 const projectArg = possibleProject && !possibleProject.startsWith("-") ? possibleProject : ".";
@@ -15,6 +16,7 @@ const option = name => {
   const index = flags.indexOf(name);
   return index >= 0 ? flags[index + 1] : undefined;
 };
+const options = name => flags.flatMap((flag, index) => flag === name && flags[index + 1] ? [flags[index + 1]] : []);
 const dryRun = flags.includes("--dry-run");
 const yes = flags.includes("--yes");
 
@@ -32,6 +34,18 @@ try {
   process.exit(1);
 }
 const manifest = resolvedRecipe.manifest;
+const inputEntries = options("--input");
+const recipeInputs = dryRun
+  ? resolveRecipeInputs(manifest, inputEntries)
+  : await (async () => {
+    const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
+    try {
+      return await collectRecipeInputs(manifest, inputEntries, question => prompt.question(question));
+    } finally {
+      prompt.close();
+    }
+  })();
+const initialMessage = renderInitialMessage(manifest, recipeInputs);
 
 const sourceAgentDirectory = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
 const subagents = dryRun ? undefined : ensureSubagents({ project, agentDirectory: sourceAgentDirectory });
@@ -135,6 +149,7 @@ const outerPrompt = `${orchestratorPrompt}
 Project path: ${project}
 Recipe: ${recipe}
 Run artifact directory: ${runDirectory}
+Recipe inputs: ${JSON.stringify(recipeInputs)}
 Use Pi-subagents subagent tool for repository work. Its policy pins every child to target project and disables project artifacts. Do not use local run directory as a substitute for project evidence.`;
 const outerTools = option("--outer-tools") ?? "read,grep,find,ls,write,edit,bash,bifrost_create_role,subagent,subagent_wait";
 const command = [
@@ -145,6 +160,7 @@ const command = [
   "--append-system-prompt", outerPrompt,
   "--session-dir", join(runDirectory, "sessions")
 ];
+if (initialMessage) command.push(initialMessage);
 
 console.log(`\nPatterns run: ${runDirectory}`);
 console.log(`Outer model: ${model}`);

@@ -2,11 +2,7 @@
 
 Create an evidence-backed onboarding package for humans joining an unfamiliar repository. Workers are required for all repository discovery.
 
-Before launching workers, ask one scope question and wait for answer:
-
-> Inspect source only, or include git history and ADRs too?
-
-Default only when user explicitly declines to answer: source only. Do not infer history/ADR permission from repository access.
+Discovery scope comes from recipe preflight in initial user message. Do not ask again. Do not infer history/ADR permission beyond that selected scope.
 
 ## Discovery
 
@@ -16,7 +12,7 @@ Create task-specific, read-only roles through `bifrost_create_role`, then launch
 2. human domain story: terminology, core concepts, ownership boundaries, and user-visible behavior;
 3. test and runtime map: setup, commands, test layers, local development path, and first safe contribution.
 
-When history/ADR scope is approved, include it in the relevant worker contracts. Workers must report claims with relative repository paths. They must mark uncertainty rather than inventing relationships.
+When scope is `source-history-adrs`, include history/ADR inspection in relevant worker contracts. Workers must report claims with relative repository paths. They must mark uncertainty rather than inventing relationships.
 
 Use `subagent_wait` for completion. Do not poll workers. Treat missing route verification or failed worker as missing evidence, not fact.
 

@@ -54,7 +54,7 @@ npx bifrost-pattern fixed-orchestrator-workers
 npx bifrost-pattern repo-onboarding
 ```
 
-`repo-onboarding` creates human guide, `CONTEXT.md`, and accessible interactive HTML/Mermaid architecture-graph drafts. It asks whether to include git history/ADRs, then asks again before promoting drafts into project docs.
+`repo-onboarding` creates human guide, `CONTEXT.md`, and accessible interactive HTML/Mermaid architecture-graph drafts. Before Pi opens, runner asks whether to include git history/ADRs; Pi then starts work immediately. It asks again before promoting drafts into project docs.
 
 ## Add a pattern
 
@@ -67,7 +67,7 @@ bundled recipes
 → .pi/bifrost-patterns/recipes/<recipe-id>/
 ```
 
-A project recipe needs a positive integer `version`, `runtime: "pi"`, `safety.automaticPromptReplay: false`, and an `outer.prompt` Markdown file.
+A project recipe needs a positive integer `version`, `runtime: "pi"`, `safety.automaticPromptReplay: false`, and an `outer.prompt` Markdown file. Recipes may declare select inputs; runner collects them before Pi starts. Pass values noninteractively with `--input name=value`.
 
 ## Validation
 

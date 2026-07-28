@@ -10,6 +10,15 @@ export function validateRecipe(recipe, directory) {
   if (recipe?.safety?.automaticPromptReplay !== false) errors.push("automaticPromptReplay must be false");
   const prompt = recipe?.outer?.prompt ?? recipe?.roles?.find(role => role.id === "orchestrator")?.prompt;
   if (!prompt || typeof prompt !== "string" || !existsSync(join(directory, prompt))) errors.push("outer prompt is missing");
+  if (recipe?.inputs !== undefined && !Array.isArray(recipe.inputs)) errors.push("inputs must be an array");
+  const ids = new Set();
+  for (const input of recipe?.inputs ?? []) {
+    if (!input.id || !input.prompt || !Array.isArray(input.options) || input.options.length === 0) errors.push("each input requires id, prompt, and options");
+    if (ids.has(input.id)) errors.push(`input '${input.id}' is duplicated`);
+    ids.add(input.id);
+    if (!input.options?.every(option => typeof option.value === "string" && typeof option.label === "string")) errors.push(`input '${input.id}' has invalid options`);
+    if (input.default !== undefined && !input.options?.some(option => option.value === input.default)) errors.push(`input '${input.id}' default is not an option`);
+  }
   return errors;
 }
 

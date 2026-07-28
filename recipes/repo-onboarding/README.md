@@ -16,7 +16,7 @@ scope gate
 npx bifrost-pattern repo-onboarding
 ```
 
-At runtime choose one discovery scope:
+Before Pi opens, runner asks for one discovery scope (or pass `--input discoveryScope=<value>`):
 
 - **source only** — default, lower cost;
 - **source + git history + ADRs** — adds rationale and evolution evidence.
