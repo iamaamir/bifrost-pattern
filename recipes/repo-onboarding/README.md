@@ -5,8 +5,8 @@ Human-first, evidence-backed repository orientation.
 ```text
 scope gate
   → parallel read-only architecture / domain / runtime workers
-  → outer synthesis
-  → private drafts + interactive graph
+  → frontend specialist authors private drafts + interactive graph
+  → simulated junior engineer review + up to 3 targeted revisions
   → explicit project-document promotion gate
 ```
 
@@ -38,6 +38,10 @@ architecture.md
 ```
 
 `architecture.html` is static and dependency-free. It opens locally, renders confirmed edges between model-selected system groups, supports keyboard navigation, and reveals each node's source evidence. Runtime flows and recommendations remain separate. `architecture.md` contains Mermaid fallback.
+
+## Artifact review
+
+`bifrost-frontend-specialist` owns first draft and revisions in run draft directory only. `bifrost-junior-onboarding-reviewer` simulates a new engineer and reports critical/warning/note friction. Outer runs at most three evidence-backed revisions, stops early when no critical or warning findings remain, and never treats simulated review as replacement for real user feedback.
 
 ## Promotion
 

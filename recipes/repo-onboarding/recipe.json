@@ -22,6 +22,11 @@
   "preflight": [
     { "capability": "repo-index", "output": "onboarding/repo-index.json" }
   ],
+  "artifactReview": {
+    "author": "bifrost-frontend-specialist",
+    "reviewer": "bifrost-junior-onboarding-reviewer",
+    "maxRevisions": 3
+  },
   "requires": {
     "bifrost": "Installed and configured in target project workers",
     "manualAssumptions": [
@@ -37,6 +42,7 @@
   "acceptance": [
     "Facts include relative repository-path evidence.",
     "Recommendations are clearly separate from facts and include confidence and validation.",
+    "Frontend specialist authors first drafts from verified evidence and junior reviewer reports actionable onboarding friction.",
     "Drafts include a human guide, CONTEXT.md, and accessible static HTML plus Mermaid architecture graph.",
     "No project documentation is created or modified before explicit user approval."
   ]

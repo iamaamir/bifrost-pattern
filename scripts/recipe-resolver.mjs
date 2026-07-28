@@ -23,6 +23,10 @@ export function validateRecipe(recipe, directory) {
   for (const step of recipe?.preflight ?? []) {
     if (step.capability !== "repo-index" || typeof step.output !== "string" || step.output.startsWith("/") || step.output.includes("..")) errors.push("preflight steps must use known capability and safe relative output");
   }
+  if (recipe?.artifactReview !== undefined) {
+    const review = recipe.artifactReview;
+    if (typeof review.author !== "string" || typeof review.reviewer !== "string" || !Number.isInteger(review.maxRevisions) || review.maxRevisions < 0 || review.maxRevisions > 3) errors.push("artifactReview requires author, reviewer, and maxRevisions from 0 to 3");
+  }
   return errors;
 }
 
