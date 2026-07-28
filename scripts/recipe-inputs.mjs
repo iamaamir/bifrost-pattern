@@ -34,10 +34,11 @@ export async function collectRecipeInputs(recipe, entries, ask) {
   for (const key of Object.keys(supplied)) if (!known.has(key)) throw new Error(`Recipe has unknown input '${key}'.`);
   for (const input of inputs) {
     if (supplied[input.id] !== undefined) continue;
-    const choices = input.options.map(option => `${option.value} (${option.label})`).join(", ");
-    const answer = (await ask(`${input.prompt} [${choices}]: `)).trim();
-    if (!answer && input.default !== undefined) supplied[input.id] = input.default;
-    else supplied[input.id] = answer;
+    const choices = input.options.map((option, index) => `${index + 1}) ${option.label}`).join("\n");
+    const answer = (await ask(`${input.prompt}\n${choices}\nChoose [1-${input.options.length}]: `)).trim();
+    const selected = /^\d+$/.test(answer) ? input.options[Number(answer) - 1]?.value : answer;
+    if (!selected && input.default !== undefined) supplied[input.id] = input.default;
+    else supplied[input.id] = selected;
   }
   return resolveRecipeInputs(recipe, Object.entries(supplied).map(([key, value]) => `${key}=${value}`));
 }
