@@ -37,7 +37,7 @@ architecture.html
 architecture.md
 ```
 
-`architecture.html` is static and dependency-free. It opens locally, supports keyboard navigation, and reveals each node's source evidence. `architecture.md` contains Mermaid fallback.
+`architecture.html` is static and dependency-free. It opens locally, renders confirmed edges between model-selected system groups, supports keyboard navigation, and reveals each node's source evidence. Runtime flows and recommendations remain separate. `architecture.md` contains Mermaid fallback.
 
 ## Promotion
 

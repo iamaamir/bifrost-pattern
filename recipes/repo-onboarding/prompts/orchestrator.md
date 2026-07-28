@@ -26,7 +26,7 @@ Write drafts under `${BIFROST_PATTERN_RUN_DIRECTORY}/onboarding/`:
 
 - `onboarding.md`: human setup path, architecture tour, domain vocabulary, workflows, and first safe task;
 - `CONTEXT.md`: concise shared mental model for future maintainers;
-- `architecture.json`: graph data with `title`, `nodes`, `edges`, and `recommendations`. Every node must contain `id`, `label`, `purpose`, and non-empty `evidence` array;
+- `architecture.json`: graph data with `title`, `nodes`, `edges`, `flows`, and `recommendations`. Choose groups that explain this repository, rather than forcing a fixed taxonomy. Every node must contain `id`, `label`, `group`, `kind`, `purpose`, and non-empty `evidence` array. A flow has `title`, `summary`, and ordered node-id `steps`. Every recommendation must include `title`, `confidence`, `why`, and `safeValidationCommand`;
 - `architecture.html` and `architecture.md`, generated with:
   `node "$BIFROST_PATTERN_ROOT/scripts/onboarding-graph.mjs" architecture.json architecture.html architecture.md`
 
