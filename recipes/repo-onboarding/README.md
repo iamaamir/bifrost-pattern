@@ -21,6 +21,10 @@ Before Pi opens, runner asks for one discovery scope (or pass `--input discovery
 - **source only** — default, lower cost;
 - **source + git history + ADRs** — adds rationale and evolution evidence.
 
+## Token-efficient discovery
+
+Before Pi starts, recipe builds local `.pi/bifrost-patterns/cache/repo-index.json` and copies compact run-specific index into drafts. Index contains hashes, paths, language/directory counts, selected manifest metadata, entry/test candidates, and bounded import edges—never source contents. Workers use it to choose evidence files, then verify claims from those files.
+
 ## Drafts
 
 Drafts remain in run-local `.pi/bifrost-patterns/outer-runs/<run-id>/onboarding/` until approved:

@@ -8,6 +8,7 @@ import { ensureBifrost } from "./bootstrap-bifrost.mjs";
 import { ensureSubagents } from "./bootstrap-subagents.mjs";
 import { resolveRecipe } from "./recipe-resolver.mjs";
 import { collectRecipeInputs, renderInitialMessage, resolveRecipeInputs } from "./recipe-inputs.mjs";
+import { buildRepoIndex } from "./repo-index.mjs";
 
 const [recipe, possibleProject, ...remaining] = process.argv.slice(2);
 const projectArg = possibleProject && !possibleProject.startsWith("-") ? possibleProject : ".";
@@ -101,6 +102,17 @@ mkdirSync(outerDirectory, { recursive: true });
 mkdirSync(join(outerDirectory, ".pi"), { recursive: true });
 writeFileSync(join(outerDirectory, ".pi", "bifrost.json"), `${JSON.stringify({ enabled: false }, null, 2)}\n`);
 mkdirSync(ledgerDirectory, { recursive: true });
+const preflightArtifacts = {};
+if (!dryRun) for (const step of manifest.preflight ?? []) {
+  if (step.capability === "repo-index") {
+    const output = join(runDirectory, step.output);
+    const index = buildRepoIndex({ project, cachePath: join(project, ".pi", "bifrost-patterns", "cache", "repo-index.json") });
+    mkdirSync(dirname(output), { recursive: true });
+    writeFileSync(output, `${JSON.stringify(index, null, 2)}\n`, { mode: 0o600 });
+    preflightArtifacts[step.capability] = output;
+    console.log(`Preflight repo index: ${output} (${index.cacheHit ? "cache hit" : "built"})`);
+  }
+}
 
 writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, startedAt: new Date().toISOString(), outerModel: model, workers: [], routes: [], outcome: "running" }, null, 2)}\n`);
 
@@ -150,6 +162,7 @@ Project path: ${project}
 Recipe: ${recipe}
 Run artifact directory: ${runDirectory}
 Recipe inputs: ${JSON.stringify(recipeInputs)}
+Preflight artifacts: ${JSON.stringify(preflightArtifacts)}
 Use Pi-subagents subagent tool for repository work. Its policy pins every child to target project and disables project artifacts. Do not use local run directory as a substitute for project evidence.`;
 const outerTools = option("--outer-tools") ?? "read,grep,find,ls,write,edit,bash,bifrost_create_role,subagent,subagent_wait";
 const command = [

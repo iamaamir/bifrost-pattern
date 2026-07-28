@@ -19,6 +19,10 @@ export function validateRecipe(recipe, directory) {
     if (!input.options?.every(option => typeof option.value === "string" && typeof option.label === "string")) errors.push(`input '${input.id}' has invalid options`);
     if (input.default !== undefined && !input.options?.some(option => option.value === input.default)) errors.push(`input '${input.id}' default is not an option`);
   }
+  if (recipe?.preflight !== undefined && !Array.isArray(recipe.preflight)) errors.push("preflight must be an array");
+  for (const step of recipe?.preflight ?? []) {
+    if (step.capability !== "repo-index" || typeof step.output !== "string" || step.output.startsWith("/") || step.output.includes("..")) errors.push("preflight steps must use known capability and safe relative output");
+  }
   return errors;
 }
 

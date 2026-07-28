@@ -19,6 +19,9 @@
       ]
     }
   ],
+  "preflight": [
+    { "capability": "repo-index", "output": "onboarding/repo-index.json" }
+  ],
   "requires": {
     "bifrost": "Installed and configured in target project workers",
     "manualAssumptions": [
