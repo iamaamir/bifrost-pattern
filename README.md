@@ -17,16 +17,33 @@ fixed/pinned orchestrator
 
 The orchestrator owns scope, delegation, review, and integration. Bifrost owns model selection within worker turns.
 
+## Run a pattern
+
+One command opens one outer Pi session. Outer decides which workers to delegate; workers run in background child Pi processes and use target project's normal Bifrost configuration.
+
+```bash
+npm run pattern:run -- fixed-orchestrator-workers /path/to/project
+```
+
+On first run, runner prints `pi --list-models`, asks for an orchestrator `provider/model`, and saves that user-chosen value in target `.bifrost-patterns.json`. Pass it directly to avoid prompt:
+
+```bash
+npm run pattern:run -- fixed-orchestrator-workers /path/to/project \
+  --orchestrator-model provider/model
+```
+
+Outer runs from isolated run directory, so target project-local Bifrost loads only in workers. Global user extensions remain available. V0 assumes Bifrost is project-local; a globally installed Bifrost can still load in outer session.
+
 ## Local-first feedback
 
-Runs live under `runs/` in this repository. They record recipe ID, role, observed routing outcome, result, and human verdict. Prompt bodies, credentials, provider responses, and telemetry are never collected by the lab.
+Runs live under `runs/` in this repository. They record recipe ID, role, worker result, and human verdict. Prompt bodies, credentials, provider responses, and telemetry are never collected by the lab.
 
 ```bash
 npm run recipe:validate
 npm run run:new -- fixed-orchestrator-workers /path/to/project
 ```
 
-`run:new` creates a local template and prints manual validation steps. It intentionally does **not** launch agents: Pi/orchestrator process inheritance and fixed-model pinning must be proven per environment before automation is added.
+`run:new` creates a manual template. `pattern:run` is the normal one-command runner.
 
 ## Recipe contract
 

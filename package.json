@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "recipe:validate": "node scripts/validate-recipe.mjs",
-    "run:new": "node scripts/start-run.mjs"
+    "run:new": "node scripts/start-run.mjs",
+    "pattern:run": "node scripts/run-pattern.mjs"
   }
 }

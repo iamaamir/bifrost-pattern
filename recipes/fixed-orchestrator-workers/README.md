@@ -19,19 +19,23 @@ outer orchestrator (fixed/pinned model)
 workers: Bifrost normal routing
 ```
 
-## Setup
+## One-command run
 
-1. Install/configure Bifrost in target project normally.
-2. Start outer orchestrator with explicitly selected model; pin or bypass Bifrost in that outer session using public Bifrost/Pi controls. Pinning controls routing only.
-3. Load [`prompts/orchestrator.md`](prompts/orchestrator.md) into outer session. It supplies delegation-only behavior: outer decides and reviews but does not inspect, edit, test, or execute repository work.
-4. Launch workers in target project. Verify each worker loads project Bifrost configuration before relying on this recipe.
-5. Give each worker one bounded brief from `prompts/`.
-6. Orchestrator alone reviews, integrates, and performs mutating Git operations after worker evidence.
-7. Create local feedback template:
+Install/configure Bifrost **project-locally** in target project, then run from Patterns Lab:
 
 ```bash
-npm run run:new -- fixed-orchestrator-workers /absolute/path/to/project
+npm run pattern:run -- fixed-orchestrator-workers /absolute/path/to/project
 ```
+
+Runner lists available Pi models on first run and saves chosen outer model in target `.bifrost-patterns.json`. It opens one outer Pi session. Outer has read-only tools plus `delegate_worker`; it chooses scout/implementer/verifier and receives each worker result in same session.
+
+Workers run in target project, so normal project Bifrost routing applies. Scout gets read-only tools; implementer gets edit/test tools; verifier gets read/test tools. Patterns worker guard blocks mutating Git commands.
+
+Outer runs from isolated run directory, preserving global user extensions while avoiding target project-local Bifrost. V0 does not isolate a globally installed Bifrost.
+
+## Manual fallback
+
+If runner cannot launch in your environment, use [`prompts/orchestrator.md`](prompts/orchestrator.md) plus role prompts manually. Orchestrator alone reviews, integrates, and performs mutating Git operations after worker evidence.
 
 ## Routing intent
 
