@@ -35,7 +35,7 @@ export default function (pi: ExtensionAPI) {
     event.input.cwd = project;
     event.input.artifacts = false;
     const agent = typeof event.input.agent === "string" ? event.input.agent : undefined;
-    if (agent?.startsWith("bifrost-")) {
+    if (agent) {
       const guard = `${process.env.BIFROST_PATTERN_ROOT}/extensions/worker-guard.ts`;
       const extensions = Array.isArray(event.input.subagentOnlyExtensions) ? event.input.subagentOnlyExtensions : [];
       event.input.subagentOnlyExtensions = [...extensions, guard];

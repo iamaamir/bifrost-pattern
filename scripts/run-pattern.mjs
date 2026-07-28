@@ -130,10 +130,11 @@ const outerPrompt = `${orchestratorPrompt}
 Project path: ${project}
 Recipe: ${recipe}
 Use Pi-subagents subagent tool for repository work. Its policy pins every child to target project and disables project artifacts. Do not use local run directory as a substitute for project evidence.`;
-const outerTools = option("--outer-tools") ?? "read,grep,find,ls,write,edit,bash,subagent,subagent_wait";
+const outerTools = option("--outer-tools") ?? "read,grep,find,ls,write,edit,bash,bifrost_create_role,subagent,subagent_wait";
 const command = [
   "--model", model,
   "--extension", join(root, "extensions", "bifrost-subagent-policy.ts"),
+  "--extension", join(root, "extensions", "role-compiler.ts"),
   "--tools", outerTools,
   "--append-system-prompt", outerPrompt,
   "--session-dir", join(runDirectory, "sessions")

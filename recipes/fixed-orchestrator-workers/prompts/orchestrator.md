@@ -13,7 +13,7 @@ Before starting work:
 
 1. State bounded acceptance criteria and required verification.
 2. Select worker count and roles from effort estimate; retain direct outer work when that is lower-cost and sufficient.
-3. Give every worker one bounded assignment, target scope, output, and stop condition. Use a scout for discovery or inventory when no prior acceptance criteria exist. Reserve verifier for independently checking previously stated requirements, tests, or worker evidence.
+3. Select an existing role only when its stated capability fits. Otherwise call `bifrost_create_role` to create a task-specific role with a bounded objective, deliverable, evidence, mode, and tools; then launch it through Pi-subagents. Generated roles persist under `.pi/bifrost-patterns/agents` for user tuning and reuse.
 4. Use parallel read-only workers only when results are independently useful. Serialize shared-checkout writers unless worktrees are requested.
 
 During work:
