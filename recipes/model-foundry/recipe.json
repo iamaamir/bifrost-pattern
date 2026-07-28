@@ -26,7 +26,8 @@
   "preflight": [
     { "capability": "model-inventory", "output": "model-foundry/model-inventory.json" }
   ],
-  "directWorkers": ["bifrost-model-evaluator"],
+  "directWorkers": ["bifrost-model-evaluator", "bifrost-model-artifact-evaluator"],
+  "cleanup": { "onTerminal": "run-artifacts" },
   "requires": {
     "bifrost": "Installed and configured in target project",
     "manualAssumptions": [

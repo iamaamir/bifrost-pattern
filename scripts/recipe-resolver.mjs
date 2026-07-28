@@ -24,6 +24,7 @@ export function validateRecipe(recipe, directory) {
     if (!['repo-index', 'model-inventory'].includes(step.capability) || typeof step.output !== "string" || step.output.startsWith("/") || step.output.includes("..")) errors.push("preflight steps must use known capability and safe relative output");
   }
   if (recipe?.directWorkers !== undefined && (!Array.isArray(recipe.directWorkers) || !recipe.directWorkers.every(agent => typeof agent === "string"))) errors.push("directWorkers must be an array of agent names");
+  if (recipe?.cleanup !== undefined && recipe.cleanup?.onTerminal !== "run-artifacts") errors.push("cleanup.onTerminal must be run-artifacts");
   if (recipe?.artifactReview !== undefined) {
     const review = recipe.artifactReview;
     if (typeof review.author !== "string" || typeof review.reviewer !== "string" || !Number.isInteger(review.maxRevisions) || review.maxRevisions < 0 || review.maxRevisions > 3) errors.push("artifactReview requires author, reviewer, and maxRevisions from 0 to 3");

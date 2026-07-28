@@ -1,36 +1,36 @@
 # Model Foundry orchestrator
 
-Build a local, evidence-backed proposal for a new Bifrost model pool. Never modify `.pi/bifrost.json` unless user explicitly approves a final diff. Existing tiers and models remain untouched.
+Build a local, evidence-backed proposal for a new Bifrost model pool. Never modify `.pi/bifrost.json`. Existing tiers and models remain untouched; user applies any proposal manually outside this run.
 
-Read `model-inventory` from Current run preflight artifacts. It lists only models already configured in target Bifrost config. Never add external/unconfigured candidate models.
+Read `model-inventory` from Current run preflight artifacts. It lists only models already configured in target Bifrost config. Never add external/unconfigured candidates.
 
 ## Capability contract
 
-Preset from recipe input is a starter only, not fixed taxonomy. For `custom`, ask user for target work and what proves a result is good. For every preset, state a compact contract:
+Preset from recipe input is a starter only, not fixed taxonomy. For `custom`, ask user for target work and what proves a useful result. Build a compact internal contract with intended work, representative tasks, and scoring approach. Do not dump full acceptance rubric to user.
 
-- intended work;
-- 2 bounded, read-only representative tasks grounded in target project;
-- acceptance criteria, preferring deterministic evidence;
-- max 3 candidate models from inventory;
-- provider-call consent and approximate maximum of 6 candidate-task calls.
+Outer decides evaluation mode and states one short reason:
 
-Ask user for consent before launching any evaluator. If declined, produce no ranking.
+- **answer**: candidate can answer from read-only project inspection;
+- **artifact**: candidate must create/test an artifact to demonstrate fit.
 
-## Direct candidate evaluation
+Use answer mode unless artifact is necessary. Ask consent before provider calls. Show only task titles, initial candidate names, reserve availability, and maximum call budget. Default maximum is 6 calls. Initial set may contain up to 3 candidates; keep remaining inventory candidates as reserves.
 
-For each chosen candidate and each task, launch `bifrost-model-evaluator` through Pi-subagents with explicit `model` set to exact inventory candidate. Evaluators run in isolated outer workspace where Bifrost is disabled; this proves candidate selection without mutating project config. Their task must include absolute target project path and read-only scope.
+## Candidate evaluation
 
-Use `subagent_wait`, never poll. Do not retry failed calls. Record unavailable/failed candidates as such.
+Every evaluator requires explicit candidate `model` from inventory. Bifrost is disabled for evaluator sessions, proving direct candidate selection without config mutation.
 
-Score only observed task results against contract. Prefer deterministic evidence; use outer review only for residual judgment. Report task success, evidence quality, uncertainty, duration/cost when observed, and reliability. Say "fit for this contract", never "best model" or universal expertise.
+### Answer mode
 
-## Proposal
+Launch `bifrost-model-evaluator`. It has read-only inspection tools and cannot write or run shell commands. Give every candidate same bounded task and target project path.
 
-Write local draft under `${BIFROST_PATTERN_RUN_DIRECTORY}/model-foundry/`:
+### Artifact mode
 
-- `contract.md`;
-- `scorecard.json` with only model IDs, task IDs, redacted scores/metadata, and no prompt/response bodies;
-- `proposal.json` containing additive `models.<suggested-name>` config fragment;
-- `proposal.md` with ranked candidates, limits, and exact config diff.
+Call `bifrost_create_evaluation_workspace` for each candidate. Launch `bifrost-model-artifact-evaluator` with that workspace as `cwd`. It may write only there and run only package test commands. Never give it target project path.
 
-Suggest 3 short letters-only tier names after results. User chooses name. Do not write target Bifrost config. If user chooses a name and explicitly asks to apply proposal, show exact diff again and preserve original entries.
+No automatic retry. On provider/task failure, record candidate reliability failure and stop that candidate. Use an unevaluated reserve only while approved call budget remains. Fewer than 2 completed candidates after budget exhaustion means no proposal.
+
+## Scoring and proposal
+
+Anonymize candidate answers/artifacts before independent expert review. Score observed fit for this contract only: task result, evidence quality, scope discipline, reliability, latency/cost when observed. Do not claim universal model expertise.
+
+Write temporary drafts under `${BIFROST_PATTERN_RUN_DIRECTORY}/model-foundry/` only while run is active. Before terminal exit, summarize ranking, confidence, failures, and suggested additive tier fragment to user. Do not write Bifrost config. Runner automatically deletes detailed answers, scorecards, proposals, candidate workspaces, and session artifacts after terminal outcome; redacted lifecycle ledger remains.
