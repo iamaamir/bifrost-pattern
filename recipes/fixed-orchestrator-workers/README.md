@@ -21,7 +21,7 @@ workers: Bifrost normal routing
 
 ## One-command run
 
-Install/configure Bifrost **project-locally** in target project, then run from Patterns Lab:
+Install/configure Bifrost in target project normally, then run from Patterns Lab:
 
 ```bash
 npm run pattern:run -- fixed-orchestrator-workers /absolute/path/to/project
@@ -31,7 +31,7 @@ Runner lists available Pi models on first run and saves chosen outer model in ta
 
 Workers run in target project, so normal project Bifrost routing applies. Scout gets read-only tools; implementer gets edit/test tools; verifier gets read/test tools. Patterns worker guard blocks mutating Git commands.
 
-Outer runs from isolated run directory, preserving global user extensions while avoiding target project-local Bifrost. V0 does not isolate a globally installed Bifrost.
+Outer runs from isolated profile. Runner preserves user extensions but filters configured Bifrost package sources, so selected outer model stays fixed. Workers use normal target project configuration and Bifrost routing.
 
 ## Manual fallback
 

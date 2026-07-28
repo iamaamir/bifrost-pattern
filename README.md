@@ -32,7 +32,7 @@ npm run pattern:run -- fixed-orchestrator-workers /path/to/project \
   --orchestrator-model provider/model
 ```
 
-Outer runs from isolated run directory, so target project-local Bifrost loads only in workers. Global user extensions remain available. V0 assumes Bifrost is project-local; a globally installed Bifrost can still load in outer session.
+Runner creates isolated outer Pi profile: it preserves configured user extensions while filtering package sources containing `pi-bifrost`. Bifrost loads only in worker processes, which use target project's normal Pi configuration.
 
 ## Local-first feedback
 

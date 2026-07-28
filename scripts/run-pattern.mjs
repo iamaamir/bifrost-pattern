@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
@@ -68,6 +69,25 @@ writeFileSync(join(runDirectory, "feedback.json"), `${JSON.stringify({
 }, null, 2)}\n`);
 
 const orchestratorPrompt = readFileSync(join(root, "recipes", recipe, "prompts", "orchestrator.md"), "utf8");
+function createOuterAgentDirectory(runDirectory) {
+  const source = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
+  const target = join(runDirectory, "agent");
+  mkdirSync(target, { recursive: true });
+
+  for (const entry of readdirSync(source)) {
+    if (entry === "settings.json") continue;
+    const destination = join(target, entry);
+    if (!existsSync(destination)) symlinkSync(join(source, entry), destination);
+  }
+
+  const settingsPath = join(source, "settings.json");
+  const settings = existsSync(settingsPath) ? JSON.parse(readFileSync(settingsPath, "utf8")) : {};
+  settings.packages = (settings.packages ?? []).filter(entry => !String(entry).toLowerCase().includes("pi-bifrost"));
+  writeFileSync(join(target, "settings.json"), `${JSON.stringify(settings, null, 2)}\n`);
+  return target;
+}
+
+const outerAgentDirectory = createOuterAgentDirectory(runDirectory);
 const outerPrompt = `${orchestratorPrompt}
 
 ## Current run
@@ -86,8 +106,8 @@ const command = [
 console.log(`\nPatterns run: ${runDirectory}`);
 console.log(`Outer model: ${model}`);
 console.log("Workers load target project's normal Pi/Bifrost resources.");
-console.log("Outer runs from isolated directory, so target project's local Bifrost does not load there.");
-console.log("Warning: globally installed Bifrost may still load in outer session; v0 supports project-local Bifrost only.\n");
+console.log("Outer profile preserves user extensions but excludes configured Bifrost packages.");
+console.log("Workers load normal target project configuration.\n");
 
 if (dryRun) {
   console.log(`Dry run: (cwd ${outerDirectory}) pi ${command.map(arg => JSON.stringify(arg)).join(" ")}`);
@@ -101,7 +121,8 @@ const child = spawn("pi", command, {
     ...process.env,
     BIFROST_PATTERN_PROJECT: project,
     BIFROST_PATTERN_ROOT: root,
-    BIFROST_PATTERN_RUN_DIRECTORY: runDirectory
+    BIFROST_PATTERN_RUN_DIRECTORY: runDirectory,
+    PI_CODING_AGENT_DIR: outerAgentDirectory
   }
 });
 

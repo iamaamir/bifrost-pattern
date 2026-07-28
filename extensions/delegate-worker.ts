@@ -46,6 +46,9 @@ export default function (pi: ExtensionAPI) {
       const role = params.role as Role;
       const { project, root, runDirectory } = runtime();
       const prompt = `${workerPrompt(root, role)}\n\nAssignment: ${params.assignment}\n\nAcceptance criteria: ${params.acceptanceCriteria}`;
+      const childEnv = { ...process.env };
+      delete childEnv.PI_CODING_AGENT_DIR;
+      delete childEnv.PI_CODING_AGENT_SESSION_DIR;
       const child = spawnSync("pi", [
         "--no-session",
         "--approve",
@@ -56,7 +59,7 @@ export default function (pi: ExtensionAPI) {
       ], {
         cwd: project,
         encoding: "utf8",
-        env: process.env,
+        env: childEnv,
         maxBuffer: 1024 * 1024
       });
 
