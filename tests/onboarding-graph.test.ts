@@ -4,24 +4,36 @@ import { renderGraph } from "../scripts/onboarding-graph.mjs";
 
 const graph = {
   title: "Example onboarding",
-  nodes: [{ id: "api", label: "API", group: "Runtime", kind: "entry point", purpose: "Serves requests", evidence: ["src/api.ts"] }],
-  edges: [],
-  flows: [{ title: "Request", summary: "Request reaches API", steps: ["api"] }],
+  overview: {
+    thesis: "Requests enter API and execute domain rules.",
+    systems: [
+      { id: "delivery", label: "Delivery", purpose: "Accepts requests" },
+      { id: "domain", label: "Domain", purpose: "Owns rules" },
+      { id: "quality", label: "Quality", purpose: "Verifies behavior" },
+    ],
+    primaryFlow: { title: "Request path", summary: "Request reaches domain", steps: ["delivery", "domain"] },
+  },
+  nodes: [
+    { id: "api", label: "API", system: "delivery", kind: "entry point", purpose: "Serves requests", evidence: ["src/api.ts"] },
+    { id: "rules", label: "Rules", system: "domain", kind: "service", purpose: "Applies rules", evidence: ["src/rules.ts"] },
+  ],
+  edges: [{ from: "api", to: "rules", label: "calls" }],
+  flows: [{ title: "Request", summary: "Request reaches domain", steps: ["api", "rules"] }],
   recommendations: [{ title: "Add smoke test", confidence: "medium", why: "No route coverage", safeValidationCommand: "npm test" }],
 };
 
-test("renders grouped accessible graph with evidence, flow, and Mermaid fallback", () => {
+test("renders system overview with primary flow and hidden component detail", () => {
   const output = renderGraph(graph);
-  assert.match(output.html, /<main id="content" tabindex="-1">/);
-  assert.match(output.html, /class="map-canvas"/);
-  assert.match(output.html, /Runtime/);
-  assert.match(output.html, /src\/api\.ts/);
+  assert.match(output.html, /class="system-map"/);
+  assert.match(output.html, /Requests enter API and execute domain rules/);
+  assert.match(output.html, /Request path/);
+  assert.match(output.html, /Components in selected system/);
   assert.match(output.html, /npm test/);
   assert.match(output.markdown, /```mermaid/);
-  assert.match(output.markdown, /Request/);
+  assert.match(output.markdown, /## System overview/);
 });
 
-test("rejects nodes without group and recommendations without validation", () => {
-  assert.throws(() => renderGraph({ ...graph, nodes: [{ ...graph.nodes[0], group: undefined }] }), /group/);
-  assert.throws(() => renderGraph({ ...graph, recommendations: [{ ...graph.recommendations[0], safeValidationCommand: undefined }] }), /safeValidationCommand/);
+test("rejects missing overview and node system mapping", () => {
+  assert.throws(() => renderGraph({ ...graph, overview: undefined }), /overview/);
+  assert.throws(() => renderGraph({ ...graph, nodes: [{ ...graph.nodes[0], system: undefined }] }), /system/);
 });

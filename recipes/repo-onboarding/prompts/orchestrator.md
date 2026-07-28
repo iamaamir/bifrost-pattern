@@ -24,7 +24,7 @@ Author creates:
 
 - `onboarding.md`: human setup path, architecture tour, domain vocabulary, workflows, and first safe task;
 - `CONTEXT.md`: concise shared mental model;
-- `architecture.json`: `title`, `nodes`, `edges`, `flows`, and `recommendations`. Model chooses meaningful groups for this repository. Every node: `id`, `label`, `group`, `kind`, `purpose`, non-empty `evidence`; every flow: `title`, `summary`, ordered node-id `steps`; every recommendation: `title`, `confidence`, `why`, `safeValidationCommand`;
+- `architecture.json`: `title`, `overview`, `nodes`, `edges`, `flows`, and `recommendations`. `overview` contains a repository-specific `thesis`, 2–6 meaningful systems (`id`, `label`, `purpose`), and one `primaryFlow` (`title`, `summary`, ordered system-id `steps`). Prefer 3–6 systems; use two only when repository is genuinely small. Every node: `id`, `label`, `system` (overview system id), `kind`, `purpose`, non-empty `evidence`. Keep components out of overview. Every secondary flow: `title`, `summary`, ordered node-id `steps`; every recommendation: `title`, `confidence`, `why`, `safeValidationCommand`;
 - `architecture.html` and `architecture.md`, generated in draft directory with `node "$BIFROST_PATTERN_ROOT/scripts/onboarding-graph.mjs" architecture.json architecture.html architecture.md`.
 
 Author must not place prompt bodies, provider responses, credentials, file contents, or tool output in drafts.
