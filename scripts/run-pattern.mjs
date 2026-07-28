@@ -1,22 +1,25 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
 
-const [recipe, projectArg, ...flags] = process.argv.slice(2);
+const [recipe, possibleProject, ...remaining] = process.argv.slice(2);
+const projectArg = possibleProject && !possibleProject.startsWith("-") ? possibleProject : ".";
+const flags = possibleProject && !possibleProject.startsWith("-") ? remaining : [possibleProject, ...remaining].filter(Boolean);
 const option = name => {
   const index = flags.indexOf(name);
   return index >= 0 ? flags[index + 1] : undefined;
 };
 const dryRun = flags.includes("--dry-run");
 
-if (recipe !== "fixed-orchestrator-workers" || !projectArg) {
-  console.error("Usage: npm run pattern:run -- fixed-orchestrator-workers <project-path> [--orchestrator-model provider/model] [--outer-tools tool,...] [--dry-run]");
+if (recipe !== "fixed-orchestrator-workers") {
+  console.error("Usage: bifrost-pattern fixed-orchestrator-workers [project-path] [--orchestrator-model provider/model] [--outer-tools tool,...] [--dry-run]");
   process.exit(1);
 }
 
-const root = process.cwd();
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const project = resolve(projectArg);
 const manifest = join(root, "recipes", recipe, "recipe.json");
 if (!existsSync(project) || !existsSync(manifest)) {
@@ -82,6 +85,9 @@ function createOuterAgentDirectory(runDirectory) {
 
   const settingsPath = join(source, "settings.json");
   const settings = existsSync(settingsPath) ? JSON.parse(readFileSync(settingsPath, "utf8")) : {};
+  if (!(settings.packages ?? []).some(entry => String(entry).toLowerCase().includes("pi-subagents"))) {
+    throw new Error("Pi-subagents is required. Run: pi install npm:pi-subagents");
+  }
   settings.packages = (settings.packages ?? []).filter(entry => !String(entry).toLowerCase().includes("pi-bifrost"));
   writeFileSync(join(target, "settings.json"), `${JSON.stringify(settings, null, 2)}\n`);
   return target;
@@ -93,11 +99,11 @@ const outerPrompt = `${orchestratorPrompt}
 ## Current run
 Project path: ${project}
 Recipe: ${recipe}
-Use delegate_worker for repository work. Worker results return through that tool. Do not use local run directory as a substitute for project evidence.`;
-const outerTools = option("--outer-tools") ?? "read,grep,find,ls,delegate_worker";
+Use Pi-subagents subagent tool for repository work. Its policy pins every child to target project and disables project artifacts. Do not use local run directory as a substitute for project evidence.`;
+const outerTools = option("--outer-tools") ?? "subagent,subagent_wait";
 const command = [
   "--model", model,
-  "--extension", join(root, "extensions", "delegate-worker.ts"),
+  "--extension", join(root, "extensions", "bifrost-subagent-policy.ts"),
   "--tools", outerTools,
   "--append-system-prompt", outerPrompt,
   "--session-dir", join(runDirectory, "sessions")
@@ -122,7 +128,8 @@ const child = spawn("pi", command, {
     BIFROST_PATTERN_PROJECT: project,
     BIFROST_PATTERN_ROOT: root,
     BIFROST_PATTERN_RUN_DIRECTORY: runDirectory,
-    PI_CODING_AGENT_DIR: outerAgentDirectory
+    PI_CODING_AGENT_DIR: outerAgentDirectory,
+    PI_SUBAGENT_EXTRA_AGENT_DIRS: join(root, "agents")
   }
 });
 

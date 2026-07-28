@@ -19,24 +19,39 @@ The orchestrator owns scope, delegation, review, and integration. Bifrost owns m
 
 ## Run a pattern
 
-One command opens one outer Pi session. Outer decides which workers to delegate; workers run in background child Pi processes and use target project's normal Bifrost configuration.
+Install Patterns once during local development:
 
 ```bash
-npm run pattern:run -- fixed-orchestrator-workers /path/to/project
+cd /Users/mak/git/bifrost-patterns
+npm link
 ```
+
+Then run from target project. Current directory is target; no project path is required:
+
+```bash
+bifrost-pattern fixed-orchestrator-workers
+```
+
+One command opens one outer Pi session. Pi-subagents owns async child processes, FleetView progress, completion batching, and worktree isolation; Patterns supplies Bifrost-specific roles and outer/worker separation.
 
 On first run, runner prints `pi --list-models`, asks for an orchestrator `provider/model`, and saves that user-chosen value in target `.bifrost-patterns.json`. Pass it directly to avoid prompt:
 
 ```bash
-npm run pattern:run -- fixed-orchestrator-workers /path/to/project \
+bifrost-pattern fixed-orchestrator-workers \
   --orchestrator-model provider/model
 ```
 
-Runner creates isolated outer Pi profile: it preserves configured user extensions while filtering package sources containing `pi-bifrost`. Bifrost loads only in worker processes, which use target project's normal Pi configuration.
+Install Pi-subagents once first:
+
+```bash
+pi install npm:pi-subagents
+```
+
+Runner creates isolated outer Pi profile: it preserves configured user extensions and Pi-subagents while filtering package sources containing `pi-bifrost`. Bifrost loads only in worker processes, which use target project's normal Pi configuration. Pi-subagents keeps private temporary lifecycle/session state for async recovery and FleetView; Patterns sends no telemetry and creates no repository artifacts by default.
 
 ## Local-first feedback
 
-Runs live under `runs/` in this repository. They record recipe ID, role, worker result, and human verdict. Prompt bodies, credentials, provider responses, and telemetry are never collected by the lab.
+Runs live under `runs/` in this repository. They record recipe ID, role, worker result, and human verdict. Patterns sends no telemetry and stores no prompt/provider-response data. Pi-subagents maintains private temporary local lifecycle/session state for active worker recovery.
 
 ```bash
 npm run recipe:validate

@@ -21,17 +21,23 @@ workers: Bifrost normal routing
 
 ## One-command run
 
-Install/configure Bifrost in target project normally, then run from Patterns Lab:
+Install/configure Bifrost in target project normally. Install Patterns once with `npm link` from Patterns Lab, then run from target project:
 
 ```bash
-npm run pattern:run -- fixed-orchestrator-workers /absolute/path/to/project
+bifrost-pattern fixed-orchestrator-workers
 ```
 
-Runner lists available Pi models on first run and saves chosen outer model in target `.bifrost-patterns.json`. It opens one outer Pi session. Outer has read-only tools plus `delegate_worker`; it chooses scout/implementer/verifier and receives each worker result in same session.
+Install Pi-subagents once before first run:
 
-Workers run in target project, so normal project Bifrost routing applies. Scout gets read-only tools; implementer gets edit/test tools; verifier gets read/test tools. Patterns worker guard blocks mutating Git commands.
+```bash
+pi install npm:pi-subagents
+```
 
-Outer runs from isolated profile. Runner preserves user extensions but filters configured Bifrost package sources, so selected outer model stays fixed. Workers use normal target project configuration and Bifrost routing.
+Runner lists available Pi models on first run and saves chosen outer model in target `.bifrost-patterns.json`. It opens one outer Pi session with Pi-subagents FleetView. Outer has only `subagent` and `subagent_wait`; it launches `bifrost-scout`, `bifrost-implementer`, and `bifrost-verifier` workers and receives batched completion wakeups in same session.
+
+Workers run in target project, so normal project Bifrost routing applies. Read-only workers can run in parallel. Pi-subagents worktrees are required for parallel writers. Role policies scope tools; Patterns worker guard blocks mutating Git commands.
+
+Outer runs from isolated profile. Runner preserves user extensions and Pi-subagents but filters configured Bifrost package sources, so selected outer model stays fixed. Workers use normal target project configuration and Bifrost routing. Pi-subagents retains private temporary local lifecycle/session state for async recovery and FleetView; Patterns writes no repository artifacts by default.
 
 ## Manual fallback
 
