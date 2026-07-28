@@ -37,6 +37,9 @@ export function ensureBifrost({ project, agentDirectory, approveProbe }) {
   if (!existsSync(config)) {
     if (!approveProbe) return { needsProbeConsent: true, models: [] };
     runPi(project, ["--no-session", "--approve", "--print", "/bifrost init --write"]);
+    if (!existsSync(config)) {
+      throw new Error("Bifrost init did not write .pi/bifrost.json. Install a Pi-Bifrost version supporting /bifrost init --write.");
+    }
   } else if (!existsSync(probe) && approveProbe) {
     runPi(project, ["--no-session", "--approve", "--print", "/bifrost probe"]);
   }
