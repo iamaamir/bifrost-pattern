@@ -58,7 +58,7 @@ if (manifest.requiresExistingBifrost && !hasConfiguredBifrost(project, sourceAge
     process.exit(1);
   }
   const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const answer = (await prompt.question("Model Foundry requires project Bifrost setup. 1) Set up now (installs/probes, may consume quota)  2) Exit\nChoose [1-2]: ")).trim();
+  const answer = (await prompt.question("Model Foundry needs Bifrost setup.\n\nSetup installs Pi-Bifrost if needed and probes configured providers. Provider calls may consume quota.\n\n1) Set up Bifrost\n2) Exit\n\nChoose [1-2]: ")).trim();
   prompt.close();
   if (answer !== "1") process.exit(0);
   ensureBifrost({ project, agentDirectory: sourceAgentDirectory, approveProbe: true });
