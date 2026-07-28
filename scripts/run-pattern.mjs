@@ -112,6 +112,10 @@ function createOuterAgentDirectory(runDirectory) {
 
   const settingsPath = join(source, "settings.json");
   const settings = existsSync(settingsPath) ? JSON.parse(readFileSync(settingsPath, "utf8")) : {};
+  settings.packages = (settings.packages ?? []).map(entry => {
+    if (typeof entry !== "string" || entry.startsWith("npm:") || entry.includes(":")) return entry;
+    return resolve(source, entry);
+  });
   if (!(settings.packages ?? []).some(entry => String(entry).toLowerCase().includes("pi-subagents"))) {
     throw new Error("Pi-subagents is required. Run: pi install npm:pi-subagents");
   }
