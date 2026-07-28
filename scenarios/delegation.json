@@ -1,0 +1,22 @@
+[
+  {
+    "id": "immediate-lifecycle",
+    "attributes": ["single-context", "low-risk", "short"],
+    "expected": { "workers": [0, 0] }
+  },
+  {
+    "id": "mechanical-inventory",
+    "attributes": ["read-only", "mechanical", "bounded"],
+    "expected": { "workers": [1, 1], "roles": ["bifrost-scout"] }
+  },
+  {
+    "id": "bounded-change",
+    "attributes": ["write", "bounded", "testable"],
+    "expected": { "workers": [2, 2], "roles": ["bifrost-implementer", "bifrost-verifier"] }
+  },
+  {
+    "id": "independent-research",
+    "attributes": ["read-only", "uncertain", "parallel-benefit"],
+    "expected": { "workers": [2, 4], "roles": ["bifrost-scout"] }
+  }
+]

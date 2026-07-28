@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Bifrost Patterns delegation feedback",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["runId", "verdict"],
+  "properties": {
+    "runId": { "type": "string" },
+    "verdict": { "enum": ["too_few", "right", "too_many"] },
+    "notes": { "type": "string", "maxLength": 500 },
+    "at": { "type": "string", "format": "date-time" }
+  }
+}
