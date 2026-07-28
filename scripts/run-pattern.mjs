@@ -6,6 +6,7 @@ import { spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
 import { ensureBifrost } from "./bootstrap-bifrost.mjs";
 import { ensureSubagents } from "./bootstrap-subagents.mjs";
+import { resolveRecipe } from "./recipe-resolver.mjs";
 
 const [recipe, possibleProject, ...remaining] = process.argv.slice(2);
 const projectArg = possibleProject && !possibleProject.startsWith("-") ? possibleProject : ".";
@@ -17,18 +18,20 @@ const option = name => {
 const dryRun = flags.includes("--dry-run");
 const yes = flags.includes("--yes");
 
-if (recipe !== "fixed-orchestrator-workers") {
-  console.error("Usage: bifrost-pattern fixed-orchestrator-workers [project-path] [--orchestrator-model provider/model] [--outer-tools tool,...] [--dry-run]");
-  process.exit(1);
-}
-
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const project = resolve(projectArg);
-const manifest = join(root, "recipes", recipe, "recipe.json");
-if (!existsSync(project) || !existsSync(manifest)) {
-  console.error("Project path or recipe does not exist.");
+if (!recipe || !existsSync(project)) {
+  console.error("Usage: bifrost-pattern <recipe-id> [project-path] [--orchestrator-model provider/model] [--outer-tools tool,...] [--dry-run]");
   process.exit(1);
 }
+let resolvedRecipe;
+try {
+  resolvedRecipe = resolveRecipe({ root, project, id: recipe });
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+}
+const manifest = resolvedRecipe.manifest;
 
 const sourceAgentDirectory = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
 const subagents = dryRun ? undefined : ensureSubagents({ project, agentDirectory: sourceAgentDirectory });
@@ -92,15 +95,12 @@ writeFileSync(join(runDirectory, "feedback.json"), `${JSON.stringify({
   startedAt: new Date().toISOString(),
   projectPath: project,
   steps: [
-    { role: "orchestrator", routingIntent: "none", result: "not_run", humanVerdict: "not_observed", notes: "" },
-    { role: "scout", routingIntent: "quick", result: "not_run", humanVerdict: "not_observed", notes: "" },
-    { role: "implementer", routingIntent: "general", result: "not_run", humanVerdict: "not_observed", notes: "" },
-    { role: "verifier", routingIntent: "general", result: "not_run", humanVerdict: "not_observed", notes: "" }
+    ...(manifest.roles ?? []).map(role => ({ role: role.id, routingIntent: role.routingIntent ?? "dynamic", result: "not_run", humanVerdict: "not_observed", notes: "" }))
   ],
   learning: ""
 }, null, 2)}\n`);
 
-const orchestratorPrompt = readFileSync(join(root, "recipes", recipe, "prompts", "orchestrator.md"), "utf8");
+const orchestratorPrompt = readFileSync(resolvedRecipe.promptPath, "utf8");
 function createOuterAgentDirectory(runDirectory, subagents) {
   const source = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
   const target = join(runDirectory, "agent");
@@ -119,8 +119,7 @@ function createOuterAgentDirectory(runDirectory, subagents) {
     return resolve(source, entry);
   });
   if (!(settings.packages ?? []).some(entry => String(entry).toLowerCase().includes("pi-subagents"))) {
-    if (!subagents) throw new Error("Pi-subagents is required. Run: pi install -l npm:pi-subagents --approve");
-    const entry = subagents.package;
+    const entry = subagents?.package ?? "npm:pi-subagents";
     settings.packages.push(typeof entry === "string" && !entry.startsWith("npm:") && !entry.includes(":")
       ? resolve(subagents.baseDirectory, entry)
       : entry);

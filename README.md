@@ -47,6 +47,19 @@ Run data stays inside target project:
 .pi/bifrost-patterns/outer-runs/
 ```
 
+## Add a pattern
+
+Recipes are declarative folders: `recipe.json`, `prompts/`, `scenarios/`, and `README.md`. Runtime bootstrap, worker lifecycle, routing correlation, and ledger stay in core runner.
+
+Resolution order:
+
+```text
+bundled recipes
+→ .pi/bifrost-patterns/recipes/<recipe-id>/
+```
+
+A project recipe needs a positive integer `version`, `runtime: "pi"`, `safety.automaticPromptReplay: false`, and an `outer.prompt` Markdown file.
+
 ## Validation
 
 ```bash

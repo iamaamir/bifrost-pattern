@@ -1,38 +1,35 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { basename, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { resolveRecipe } from "./recipe-resolver.mjs";
 
 const [recipe, project] = process.argv.slice(2);
-if (!recipe || !project) {
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const projectPath = project ? resolve(project) : undefined;
+if (!recipe || !projectPath || !existsSync(projectPath)) {
   console.error("Usage: npm run run:new -- <recipe-id> <absolute-project-path>");
   process.exit(1);
 }
 
-const manifest = join(process.cwd(), "recipes", recipe, "recipe.json");
-const projectPath = resolve(project);
-if (!existsSync(manifest) || !existsSync(projectPath)) {
-  console.error("Recipe or project path does not exist.");
-  process.exit(1);
-}
-
+const resolvedRecipe = resolveRecipe({ root, project: projectPath, id: recipe });
 const id = `${new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-")}-${basename(projectPath)}`;
-const runDirectory = join(process.cwd(), "runs", id);
+const runDirectory = join(projectPath, ".pi", "bifrost-patterns", "manual-runs", id);
 mkdirSync(runDirectory, { recursive: true });
 
 const feedback = {
   recipe,
   startedAt: new Date().toISOString(),
   projectPath,
-  steps: [
-    { role: "orchestrator", routingIntent: "none", result: "not_run", humanVerdict: "not_observed", notes: "" },
-    { role: "scout", routingIntent: "quick", result: "not_run", humanVerdict: "not_observed", notes: "" },
-    { role: "implementer", routingIntent: "general", result: "not_run", humanVerdict: "not_observed", notes: "" },
-    { role: "verifier", routingIntent: "general", result: "not_run", humanVerdict: "not_observed", notes: "" }
-  ],
-  learning: ""
+  steps: (resolvedRecipe.manifest.roles ?? []).map(role => ({
+    role: role.id,
+    routingIntent: role.routingIntent ?? "dynamic",
+    result: "not_run",
+    humanVerdict: "not_observed",
+    notes: "",
+  })),
+  learning: "",
 };
 
 writeFileSync(join(runDirectory, "feedback.json"), `${JSON.stringify(feedback, null, 2)}\n`);
-writeFileSync(join(runDirectory, "README.md"), `# ${recipe} run\n\n1. Pin or bypass Bifrost in outer orchestrator session using public controls.\n2. Verify a worker loads project Bifrost configuration.\n3. Run bounded role assignments.\n4. Record only observed model/decision metadata in feedback.json.\n5. Do not store prompt bodies, credentials, or provider responses.\n`);
-
+writeFileSync(join(runDirectory, "README.md"), `# ${recipe} run\n\n1. Follow recipe acceptance criteria.\n2. Record only observed model/decision metadata in feedback.json.\n3. Do not store prompt bodies, credentials, provider responses, file contents, or tool output.\n`);
 console.log(`Created ${runDirectory}`);
-console.log("Manual launch only: process inheritance/pinning must be proven before automation.");
