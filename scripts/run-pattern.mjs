@@ -202,13 +202,14 @@ Run artifact directory: ${runDirectory}
 Recipe inputs: ${JSON.stringify(recipeInputs)}
 Preflight artifacts: ${JSON.stringify(preflightArtifacts)}
 Use Pi-subagents subagent tool for repository work. Its policy pins every child to target project and disables project artifacts. Do not use local run directory as a substitute for project evidence.`;
-const outerTools = option("--outer-tools") ?? "read,grep,find,ls,write,edit,bash,bifrost_create_role,subagent,subagent_wait";
+const outerTools = option("--outer-tools") ?? "read,grep,find,ls,write,edit,bash,bifrost_create_role,bifrost_build_config_fragment,bifrost_create_evaluation_workspace,subagent,subagent_wait";
 const command = [
   "--model", model,
   "--extension", join(root, "extensions", "bifrost-subagent-policy.ts"),
   "--extension", join(root, "extensions", "role-compiler.ts"),
   "--extension", join(root, "extensions", "model-foundry-policy.ts"),
   "--extension", join(root, "extensions", "model-foundry-workspace.ts"),
+  "--extension", join(root, "extensions", "model-foundry-proposal.ts"),
   "--tools", outerTools,
   "--append-system-prompt", outerPrompt,
   "--session-dir", join(runDirectory, "sessions")

@@ -33,4 +33,6 @@ No automatic retry. On provider/task failure, record candidate reliability failu
 
 Anonymize candidate answers/artifacts before independent expert review. Score observed fit for this contract only: task result, evidence quality, scope discipline, reliability, latency/cost when observed. Do not claim universal model expertise.
 
-Write temporary drafts under `${BIFROST_PATTERN_RUN_DIRECTORY}/model-foundry/` only while run is active. Before terminal exit, summarize ranking, confidence, failures, and suggested additive tier fragment to user. Do not write Bifrost config. Runner automatically deletes detailed answers, scorecards, proposals, candidate workspaces, and session artifacts after terminal outcome; redacted lifecycle ledger remains.
+Never author Bifrost configuration JSON yourself. After selecting evaluated models, call `bifrost_build_config_fragment` with a letters-only tier, selected configured models, and one valid route regex. Show only its validated output as proposed fragment. It produces `{ models: { tier: [...] }, categoryStrategies: { tier: strategy }, rules: [{ pattern, model: tier }] }`, never `{ tier, models }`. Do not write Bifrost config.
+
+Before terminal exit, summarize ranking, confidence, failures, and validated additive fragment. Do not ask user to write or review run-local files: detailed run data is deleted automatically after terminal outcome; redacted lifecycle ledger remains.
