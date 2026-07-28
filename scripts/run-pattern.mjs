@@ -9,6 +9,7 @@ import { ensureSubagents } from "./bootstrap-subagents.mjs";
 import { resolveRecipe } from "./recipe-resolver.mjs";
 import { collectRecipeInputs, renderInitialMessage, resolveRecipeInputs } from "./recipe-inputs.mjs";
 import { buildRepoIndex } from "./repo-index.mjs";
+import { ensureAstGrep } from "./bootstrap-ast-grep.mjs";
 
 const [recipe, possibleProject, ...remaining] = process.argv.slice(2);
 const projectArg = possibleProject && !possibleProject.startsWith("-") ? possibleProject : ".";
@@ -20,11 +21,12 @@ const option = name => {
 const options = name => flags.flatMap((flag, index) => flag === name && flags[index + 1] ? [flags[index + 1]] : []);
 const dryRun = flags.includes("--dry-run");
 const yes = flags.includes("--yes");
+const installAstGrep = flags.includes("--install-ast-grep");
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const project = resolve(projectArg);
 if (!recipe || !existsSync(project)) {
-  console.error("Usage: bifrost-pattern <recipe-id> [project-path] [--orchestrator-model provider/model] [--outer-tools tool,...] [--dry-run]");
+  console.error("Usage: bifrost-pattern <recipe-id> [project-path] [--orchestrator-model provider/model] [--outer-tools tool,...] [--input name=value] [--install-ast-grep] [--dry-run]");
   process.exit(1);
 }
 let resolvedRecipe;
@@ -92,6 +94,18 @@ if (!model) {
   console.log(`Saved orchestrator model in ${profilePath}`);
 }
 
+let astGrep = { status: "not_requested" };
+if (!dryRun && manifest.preflight?.some(step => step.capability === "repo-index")) {
+  astGrep = ensureAstGrep({ project, approved: installAstGrep });
+  if (astGrep.status === "unavailable" && !installAstGrep) {
+    const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const answer = (await prompt.question("ast-grep is not installed. Install pinned local AST index enhancer (@ast-grep/cli@0.45.0) under .pi/bifrost-patterns/tools? [y/N] ")).trim().toLowerCase();
+    prompt.close();
+    if (answer === "y" || answer === "yes") astGrep = ensureAstGrep({ project, approved: true });
+  }
+  if (astGrep.status === "failed") console.warn("ast-grep install failed; continuing with deterministic repository index.");
+}
+
 const id = `${new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-")}-${basename(project)}`;
 const runDirectory = join(project, ".pi", "bifrost-patterns", "outer-runs", id);
 const outerDirectory = join(runDirectory, "outer");
@@ -106,11 +120,11 @@ const preflightArtifacts = {};
 if (!dryRun) for (const step of manifest.preflight ?? []) {
   if (step.capability === "repo-index") {
     const output = join(runDirectory, step.output);
-    const index = buildRepoIndex({ project, cachePath: join(project, ".pi", "bifrost-patterns", "cache", "repo-index.json") });
+    const index = buildRepoIndex({ project, cachePath: join(project, ".pi", "bifrost-patterns", "cache", "repo-index.json"), astGrepCommand: astGrep.command });
     mkdirSync(dirname(output), { recursive: true });
     writeFileSync(output, `${JSON.stringify(index, null, 2)}\n`, { mode: 0o600 });
     preflightArtifacts[step.capability] = output;
-    console.log(`Preflight repo index: ${output} (${index.cacheHit ? "cache hit" : "built"})`);
+    console.log(`Preflight repo index: ${output} (${index.cacheHit ? "cache hit" : "built"}; ast-grep ${index.capabilities.astGrep.status})`);
   }
 }
 

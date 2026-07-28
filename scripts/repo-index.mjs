@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { locateAstGrep } from "./bootstrap-ast-grep.mjs";
 import { basename, dirname, extname, join, relative } from "node:path";
 
 const EXCLUDED_DIRECTORIES = new Set([".git", ".pi", "node_modules", "dist", "build", "coverage", ".next", ".turbo"]);
@@ -43,25 +44,24 @@ function readPackage(project) {
   } catch { return { invalid: true }; }
 }
 
-function astGrepOutline(project, run) {
-  for (const command of ["sg", "ast-grep"]) {
-    const version = run(command, ["--version"], { cwd: project, encoding: "utf8" });
-    if (version?.status !== 0) continue;
-    const outline = run(command, ["outline", ".", "--json=compact"], { cwd: project, encoding: "utf8", maxBuffer: 5 * 1024 * 1024 });
-    if (outline?.status !== 0) return { status: "failed", command, version: String(version.stdout ?? "").trim() };
-    try {
-      const parsed = JSON.parse(String(outline.stdout ?? "[]"));
-      const items = Array.isArray(parsed) ? parsed : parsed.items ?? [];
-      const symbols = items.slice(0, MAX_SYMBOLS).flatMap(item => {
-        const file = item.file ?? item.path;
-        const name = item.name;
-        if (!file || !name) return [];
-        return [{ file, name, kind: item.symbolType ?? item.kind ?? "symbol", line: item.range?.start?.line ?? item.start?.line ?? 0 }];
-      });
-      return { status: "available", command, version: String(version.stdout ?? "").trim(), symbols };
-    } catch { return { status: "failed", command, version: String(version.stdout ?? "").trim() }; }
-  }
-  return { status: "unavailable", symbols: [] };
+function astGrepOutline(project, run, command) {
+  const located = command
+    ? (() => { const result = run(command, ["--version"], { cwd: project, encoding: "utf8" }); return result?.status === 0 ? { status: "available", command, version: String(result.stdout ?? "").trim() } : { status: "unavailable" }; })()
+    : locateAstGrep({ project, run });
+  if (located.status !== "available") return { status: "unavailable", symbols: [] };
+  const outline = run(located.command, ["outline", ".", "--json=compact"], { cwd: project, encoding: "utf8", maxBuffer: 5 * 1024 * 1024 });
+  if (outline?.status !== 0) return { status: "failed", command: located.command, version: located.version, symbols: [] };
+  try {
+    const parsed = JSON.parse(String(outline.stdout ?? "[]"));
+    const items = Array.isArray(parsed) ? parsed : parsed.items ?? [];
+    const symbols = items.slice(0, MAX_SYMBOLS).flatMap(item => {
+      const file = item.file ?? item.path;
+      const name = item.name;
+      if (!file || !name) return [];
+      return [{ file, name, kind: item.symbolType ?? item.kind ?? "symbol", line: item.range?.start?.line ?? item.start?.line ?? 0 }];
+    });
+    return { status: "available", command: located.command, version: located.version, symbols };
+  } catch { return { status: "failed", command: located.command, version: located.version, symbols: [] }; }
 }
 
 function directoryCounts(paths) {
@@ -74,7 +74,7 @@ function directoryCounts(paths) {
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 80).map(([path, files]) => ({ path, files }));
 }
 
-export function buildRepoIndex({ project, cachePath, run = spawnSync }) {
+export function buildRepoIndex({ project, cachePath, run = spawnSync, astGrepCommand }) {
   const paths = filesUnder(project);
   const languages = {};
   const fingerprints = [];
@@ -87,7 +87,7 @@ export function buildRepoIndex({ project, cachePath, run = spawnSync }) {
     if (SOURCE_EXTENSIONS.has(extension) && edges.length < MAX_EDGES) edges.push(...importEdges(path, content.toString("utf8")).slice(0, MAX_EDGES - edges.length));
   }
   const fingerprint = hash(fingerprints.join("\n"));
-  const astGrep = astGrepOutline(project, run);
+  const astGrep = astGrepOutline(project, run, astGrepCommand);
   const capabilityFingerprint = hash(JSON.stringify({ status: astGrep.status, version: astGrep.version }));
   if (existsSync(cachePath)) {
     try {
