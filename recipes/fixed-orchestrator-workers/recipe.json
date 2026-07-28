@@ -1,0 +1,53 @@
+{
+  "id": "fixed-orchestrator-workers",
+  "version": 1,
+  "status": "experimental",
+  "runtime": "pi",
+  "summary": "A fixed/pinned orchestrator delegates bounded work to Pi workers that use normal Bifrost routing.",
+  "requires": {
+    "orchestratorSkill": "A delegation skill or equivalent operating discipline",
+    "bifrost": "Installed and configured in target project workers",
+    "manualAssumptions": [
+      "Outer orchestrator can be pinned or bypass Bifrost for its session.",
+      "Worker Pi sessions load target project's Bifrost config.",
+      "Observed model selection can be inspected through public Pi/Bifrost status, preview, or debug surfaces."
+    ]
+  },
+  "roles": [
+    {
+      "id": "orchestrator",
+      "owns": ["user intent", "decomposition", "review", "integration"],
+      "routingIntent": "none",
+      "bifrostMode": "pinned_or_bypassed"
+    },
+    {
+      "id": "scout",
+      "owns": ["bounded read-only investigation", "evidence report"],
+      "routingIntent": "quick",
+      "bifrostMode": "normal"
+    },
+    {
+      "id": "implementer",
+      "owns": ["one bounded implementation checkpoint", "focused tests"],
+      "routingIntent": "general",
+      "bifrostMode": "normal"
+    },
+    {
+      "id": "verifier",
+      "owns": ["independent validation", "evidence report"],
+      "routingIntent": "general",
+      "bifrostMode": "normal"
+    }
+  ],
+  "safety": {
+    "automaticPromptReplay": false,
+    "workerMutatingGit": false,
+    "orchestratorOwnsGitIntegration": true
+  },
+  "acceptance": [
+    "Outer orchestrator remains on explicitly chosen model for full run.",
+    "At least one worker visibly loads Bifrost and reports/records an observed route.",
+    "No worker silently replays failed work.",
+    "Run feedback contains no prompt body, credential, or provider response."
+  ]
+}

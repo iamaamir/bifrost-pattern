@@ -1,0 +1,10 @@
+{
+  "name": "bifrost-patterns",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "recipe:validate": "node scripts/validate-recipe.mjs",
+    "run:new": "node scripts/start-run.mjs"
+  }
+}

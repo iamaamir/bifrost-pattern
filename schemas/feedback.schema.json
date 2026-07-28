@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Bifrost Patterns local feedback",
+  "type": "object",
+  "required": ["recipe", "startedAt", "steps"],
+  "properties": {
+    "recipe": { "type": "string" },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "projectPath": { "type": "string" },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "result", "humanVerdict"],
+        "properties": {
+          "role": { "type": "string" },
+          "routingIntent": { "enum": ["quick", "general", "frontier", "none"] },
+          "observedModel": { "type": "string", "description": "Optional manually observed provider/model. No prompt body." },
+          "decisionSource": { "enum": ["inline_override", "cache", "classifier", "regex_rule", "default", "unknown"] },
+          "result": { "enum": ["success", "failure", "cancelled", "not_run"] },
+          "humanVerdict": { "enum": ["appropriate", "too_weak", "too_expensive", "unclear", "not_observed"] },
+          "notes": { "type": "string", "maxLength": 500, "description": "Do not include prompt bodies, credentials, or provider responses." }
+        },
+        "additionalProperties": false
+      }
+    },
+    "learning": { "type": "string", "maxLength": 1000 }
+  },
+  "additionalProperties": false
+}
