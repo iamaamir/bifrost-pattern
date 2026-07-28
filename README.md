@@ -8,8 +8,9 @@ Bifrost remains routing primitive. Pattern owns orchestration, worker lifecycle,
 
 ```bash
 npm install -g bifrost-pattern
-pi install npm:pi-subagents
 ```
+
+Bifrost Pattern installs Pi-Bifrost and Pi-subagents project-local when absent. It stops if either extension exists in both user and project scopes.
 
 ## Run
 

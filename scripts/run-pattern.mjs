@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
 import { ensureBifrost } from "./bootstrap-bifrost.mjs";
+import { ensureSubagents } from "./bootstrap-subagents.mjs";
 
 const [recipe, possibleProject, ...remaining] = process.argv.slice(2);
 const projectArg = possibleProject && !possibleProject.startsWith("-") ? possibleProject : ".";
@@ -30,6 +31,7 @@ if (!existsSync(project) || !existsSync(manifest)) {
 }
 
 const sourceAgentDirectory = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
+const subagents = dryRun ? undefined : ensureSubagents({ project, agentDirectory: sourceAgentDirectory });
 let bootstrap = dryRun
   ? { needsProbeConsent: false, models: [] }
   : ensureBifrost({ project, agentDirectory: sourceAgentDirectory, approveProbe: yes });
@@ -99,7 +101,7 @@ writeFileSync(join(runDirectory, "feedback.json"), `${JSON.stringify({
 }, null, 2)}\n`);
 
 const orchestratorPrompt = readFileSync(join(root, "recipes", recipe, "prompts", "orchestrator.md"), "utf8");
-function createOuterAgentDirectory(runDirectory) {
+function createOuterAgentDirectory(runDirectory, subagents) {
   const source = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
   const target = join(runDirectory, "agent");
   mkdirSync(target, { recursive: true });
@@ -117,13 +119,17 @@ function createOuterAgentDirectory(runDirectory) {
     return resolve(source, entry);
   });
   if (!(settings.packages ?? []).some(entry => String(entry).toLowerCase().includes("pi-subagents"))) {
-    throw new Error("Pi-subagents is required. Run: pi install npm:pi-subagents");
+    if (!subagents) throw new Error("Pi-subagents is required. Run: pi install -l npm:pi-subagents --approve");
+    const entry = subagents.package;
+    settings.packages.push(typeof entry === "string" && !entry.startsWith("npm:") && !entry.includes(":")
+      ? resolve(subagents.baseDirectory, entry)
+      : entry);
   }
   writeFileSync(join(target, "settings.json"), `${JSON.stringify(settings, null, 2)}\n`);
   return target;
 }
 
-const outerAgentDirectory = createOuterAgentDirectory(runDirectory);
+const outerAgentDirectory = createOuterAgentDirectory(runDirectory, subagents);
 const outerPrompt = `${orchestratorPrompt}
 
 ## Current run
