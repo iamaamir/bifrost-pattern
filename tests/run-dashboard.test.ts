@@ -5,6 +5,16 @@ import { join } from "node:path";
 import test from "node:test";
 import { dashboardView, loadRunReports, renderTerminal } from "../scripts/run-dashboard.mjs";
 
+function writeSession(root: string, workerKey: string, agent: string, model: string) {
+  const session = join(root, "sessions", "outer", workerKey, "run-0");
+  mkdirSync(session, { recursive: true });
+  writeFileSync(join(session, "session.jsonl"), [
+    JSON.stringify({ type: "session", version: 3, id: `${workerKey}-session`, timestamp: "2026-07-29T08:00:30.000Z", cwd: "/repo" }),
+    JSON.stringify({ type: "session_info", id: `${workerKey}-info`, parentId: "parent", timestamp: "2026-07-29T08:00:31.000Z", name: `subagent-${agent}-${workerKey}-1` }),
+    JSON.stringify({ type: "model_change", id: `${workerKey}-model`, parentId: `${workerKey}-info`, timestamp: "2026-07-29T08:00:32.000Z", modelId: model }),
+  ].join("\n") + "\n");
+}
+
 test("projects redacted ledgers into configurable terminal dashboard", () => {
   const project = mkdtempSync(join(tmpdir(), "bifrost-dashboard-"));
   const runs = join(project, ".pi", "bifrost-patterns", "runs");
@@ -28,4 +38,30 @@ test("projects redacted ledgers into configurable terminal dashboard", () => {
   assert.match(output, /repo-onboarding/);
   assert.match(output, /scout/);
   assert.match(output, /Tokens: unavailable/);
+});
+
+test("uses nested session logs when worker lifecycle events are incomplete", () => {
+  const project = mkdtempSync(join(tmpdir(), "bifrost-dashboard-"));
+  const runs = join(project, ".pi", "bifrost-patterns", "runs");
+  const runDirectory = join(project, ".pi", "bifrost-patterns", "outer-runs", "run-2");
+  mkdirSync(runs, { recursive: true });
+  writeFileSync(join(runs, "run-2.events.jsonl"), `${JSON.stringify({ type: "worker_requested", agent: "reviewer" })}\n`);
+  writeSession(runDirectory, "a16011c5", "reviewer", "openai/reviewer-mini");
+  writeFileSync(join(runs, "run-2.json"), JSON.stringify({
+    runId: "run-2",
+    recipe: "fixed-orchestrator-workers",
+    startedAt: "2026-07-29T09:00:00.000Z",
+    outerModel: "provider/outer",
+    outcome: "running",
+  }));
+
+  const [report] = loadRunReports(project, { now: new Date("2026-07-29T09:01:00.000Z") });
+  assert.equal(report.active, true);
+  assert.equal(report.workers.length, 1);
+  assert.equal(report.workers[0].status, "running");
+  assert.equal(report.workers[0].model, "openai/reviewer-mini");
+  const output = renderTerminal(report, dashboardView(project));
+  assert.match(output, /reviewer/);
+  assert.match(output, /openai\/reviewer-mini/);
+  assert.doesNotMatch(output, /model pending/);
 });

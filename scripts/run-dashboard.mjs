@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createPatternStore } from "./pattern-store.mjs";
+import { collectRunWorkers } from "./run-workers.mjs";
 
 const defaultFields = ["recipe", "outcome", "outerModel", "workers", "tokens"];
 
@@ -18,26 +19,6 @@ function readLines(path) {
   return readFileSync(path, "utf8").trim().split("\n").filter(Boolean).map(line => {
     try { return JSON.parse(line); } catch { return undefined; }
   }).filter(Boolean);
-}
-
-function evidenceWorkers(project, store, id, fallback) {
-  const events = readLines(join(store.root, "runs", `${id}.events.jsonl`));
-  const terminals = events.filter(event => event.type === "worker_terminal");
-  const started = events.filter(event => event.type === "worker_started");
-  const requested = events.filter(event => event.type === "worker_requested");
-  if (!terminals.length && !started.length && !requested.length) return fallback;
-  const routes = readLines(join(project, ".pi", "bifrost-debug.jsonl")).filter(event => event.pattern_run_id === id && ["model_selected", "total"].includes(event.event));
-  const terminalById = new Map();
-  for (const worker of terminals) terminalById.set(worker.runId, worker);
-  const worker = (event, status) => {
-    const route = routes.find(candidate => candidate.subagent_run_id === event.runId);
-    return { agent: event.agent, status, success: event.success, model: route?.model ?? event.model, tier: route?.tier, verified: Boolean(route), durationSeconds: event.durationMs === undefined ? undefined : Math.round(event.durationMs / 1000), errorKind: event.errorKind };
-  };
-  const result = [...terminalById.values()].map(event => worker(event, event.success ? "completed" : "failed"));
-  for (const event of started) if (!terminalById.has(event.runId)) result.push(worker(event, "running"));
-  const knownAgents = new Set([...terminals, ...started].map(event => event.agent));
-  for (const event of requested) if (!knownAgents.has(event.agent)) result.push(worker(event, "requested"));
-  return result;
 }
 
 function durationSeconds(startedAt, endedAt, now) {
@@ -62,7 +43,15 @@ export function loadRunReports(project, { now = new Date() } = {}) {
       durationSeconds: durationSeconds(ledger.startedAt, ledger.endedAt, now),
       outerModel: ledger.outerModel,
       routingVerified: ledger.routingVerified,
-      workers: evidenceWorkers(project, store, ledger.runId, (ledger.workers ?? []).map(worker => ({ agent: worker.agent, success: worker.success, model: worker.routing?.model, tier: worker.routing?.tier, verified: worker.routing?.verified, durationSeconds: worker.durationMs === undefined ? undefined : Math.round(worker.durationMs / 1000) }))),
+      workers: collectRunWorkers({
+        project,
+        runDirectory: store.runs.directory(ledger.runId),
+        runId: ledger.runId,
+        events: readLines(join(store.root, "runs", `${ledger.runId}.events.jsonl`)),
+        routes: readLines(join(project, ".pi", "bifrost-debug.jsonl")).filter(event => event.pattern_run_id === ledger.runId && ["model_selected", "total"].includes(event.event)),
+        now,
+        phase: ledger.endedAt ? "final" : "live",
+      }),
       tokens: ledger.tokens,
       cleanup: ledger.cleanup,
     };
@@ -83,7 +72,7 @@ const fields = {
   recipe: report => `Recipe: ${report.recipe}`,
   outcome: report => `Outcome: ${report.active ? "● running" : report.outcome}`,
   outerModel: report => `Outer: ${report.outerModel ?? "unavailable"}`,
-  workers: report => `Workers:\n${report.workers.length ? report.workers.map(worker => `  ${worker.status === "running" ? "●" : worker.status === "requested" ? "○" : worker.success === false ? "✗" : "✓"} ${worker.agent ?? "unknown"}  ${worker.model ?? (worker.status === "requested" ? "model pending" : "not selected")}${worker.tier ? `  tier ${worker.tier}` : ""}${worker.durationSeconds === undefined ? "" : `  ${duration(worker.durationSeconds)}`}`).join("\n") : "  none recorded"}`,
+  workers: report => `Workers:\n${report.workers.length ? report.workers.map(worker => `  ${worker.status === "running" ? "●" : worker.status === "requested" ? "○" : worker.success === false ? "✗" : "✓"} ${worker.agent ?? "unknown"}  ${worker.model ?? (worker.status === "requested" ? "model pending" : worker.status === "running" ? "spawned" : "not selected")}${worker.tier ? `  tier ${worker.tier}` : ""}${worker.durationSeconds === undefined ? "" : `  ${duration(worker.durationSeconds)}`}`).join("\n") : "  none recorded"}`,
   tokens: report => `Tokens: ${report.tokens ?? "unavailable"}`,
   duration: report => `Duration: ${duration(report.durationSeconds)}`,
   cleanup: report => `Cleanup: ${report.cleanup ?? "unavailable"}`,

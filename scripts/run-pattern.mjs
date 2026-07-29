@@ -15,6 +15,7 @@ import { resolveCapabilityPlan, selectOuterTools } from "./capability-plan.mjs";
 import { loadOrchestratorProfile, saveOrchestratorModel } from "./orchestrator-profile.mjs";
 import { createPatternStore } from "./pattern-store.mjs";
 import { createRunMonitor } from "./run-monitor.mjs";
+import { collectRunWorkers } from "./run-workers.mjs";
 import { chooseRecipe } from "./recipe-picker.mjs";
 
 const rawArgs = process.argv.slice(2);
@@ -308,6 +309,8 @@ const child = spawn("pi", command, {
     PI_SUBAGENT_EXTRA_AGENT_DIRS: join(root, "agents"),
     BIFROST_PATTERN_RUN_ID: id,
     BIFROST_PATTERN_EVENT_PATH: eventPath,
+    BIFROST_PATTERN_MONITOR_PATH: join(runDirectory, "monitor.json"),
+    BIFROST_PATTERN_MONITOR_LOG_PATH: join(runDirectory, "monitor.jsonl"),
     BIFROST_PATTERN_CAPABILITY_PLAN: JSON.stringify(capabilityPlan)
   }
 });
@@ -325,17 +328,24 @@ function finalize(code) {
       .filter(entry => entry.pattern_run_id === id)
       .map(entry => ({ at: entry.ts, subagentRunId: entry.subagent_run_id, module: entry.module, event: entry.event, tier: entry.tier ?? entry.selectedTier, model: entry.model, fallbackReason: entry.fallbackReason }))
     : [];
-  const workers = events.filter(event => event.type === "worker_terminal").map(worker => {
+  const workers = collectRunWorkers({
+    project,
+    runDirectory,
+    runId: id,
+    events,
+    routes,
+    phase: "final",
+  }).map(worker => {
     const route = routes.find(candidate => candidate.event === "total" && candidate.subagentRunId === worker.runId);
     return {
       ...worker,
-      routing: route ? { verified: true, model: route.model, tier: route.tier } : { verified: false },
+      routing: route ? { verified: true, model: route.model, tier: route.tier } : worker.source === "session" ? { verified: true, session: true, model: worker.model } : { verified: Boolean(worker.model), direct: Boolean(worker.direct), model: worker.model },
     };
   });
   const activities = events.filter(event => event.type !== "worker_terminal");
   const directWorkers = new Set(Object.keys(capabilityPlan.directWorkers));
   for (const worker of workers) if (directWorkers.has(worker.agent)) worker.routing = { verified: Boolean(worker.model), direct: true, model: worker.model };
-  const failedWorkers = workers.filter(worker => worker.success !== true || worker.routing.verified !== true);
+  const failedWorkers = workers.filter(worker => worker.success === false || worker.routing.verified === false);
   const outcome = code === 0 && workers.length > 0 && failedWorkers.length === 0 ? "completed" : "failed";
   monitor.finalize({ outcome, workers, routes, activities, routingVerified: failedWorkers.length === 0, failedWorkers: failedWorkers.map(worker => ({ agent: worker.agent, runId: worker.runId, routingVerified: worker.routing.verified })) });
   writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, recipe, startedAt: JSON.parse(readFileSync(ledgerPath, "utf8")).startedAt, endedAt: new Date().toISOString(), outerModel: model, workers, activities, routes, routingVerified: failedWorkers.length === 0, outcome }, null, 2)}\n`);

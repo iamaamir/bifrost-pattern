@@ -1,10 +1,51 @@
-import { appendFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-function record(event: Record<string, unknown>) {
-  const path = process.env.BIFROST_PATTERN_EVENT_PATH;
+function appendJson(path: string | undefined, event: Record<string, unknown>) {
   if (!path) return;
   appendFileSync(path, `${JSON.stringify({ at: new Date().toISOString(), ...event })}\n`);
+}
+
+function readJson(path: string | undefined) {
+  if (!path) return undefined;
+  try { return JSON.parse(readFileSync(path, "utf8")); } catch { return undefined; }
+}
+
+function writeJson(path: string | undefined, value: unknown) {
+  if (!path) return;
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 });
+}
+
+function updateMonitor(event: Record<string, unknown>) {
+  const jsonPath = process.env.BIFROST_PATTERN_MONITOR_PATH;
+  const logPath = process.env.BIFROST_PATTERN_MONITOR_LOG_PATH;
+  appendJson(logPath, { event: event.type, ...event });
+  if (!jsonPath) return;
+  const state = readJson(jsonPath) ?? {};
+  const worker = typeof event.runId === "string" ? event : undefined;
+  if (worker?.type === "worker_started" || worker?.type === "worker_terminal") {
+    const workers = Array.isArray(state.workers) ? state.workers : [];
+    const next = [...workers.filter((item: any) => item.runId !== worker.runId), {
+      runId: worker.runId,
+      agent: worker.agent,
+      status: worker.type === "worker_started" ? "running" : ((worker.success === true) ? "completed" : "failed"),
+      success: worker.type === "worker_terminal" ? worker.success : undefined,
+      model: worker.model,
+      durationMs: worker.durationMs,
+      errorKind: worker.errorKind,
+      updatedAt: new Date().toISOString(),
+    }];
+    writeJson(jsonPath, { ...state, workers: next, updatedAt: new Date().toISOString() });
+    return;
+  }
+  writeJson(jsonPath, { ...state, updatedAt: new Date().toISOString() });
+}
+
+function record(event: Record<string, unknown>) {
+  appendJson(process.env.BIFROST_PATTERN_EVENT_PATH, event);
+  updateMonitor(event);
 }
 
 function errorKind(error: unknown) {
