@@ -7,31 +7,30 @@ export function keyToCommand(chunk) {
 }
 
 function footer(settled) {
-  return settled ? "Run settled · press q, Esc, or Ctrl+C to exit." : "Press q, Esc, or Ctrl+C to exit watch.";
+  return settled ? "Run settled." : "Press q, Esc, or Ctrl+C to exit watch.";
 }
 
 export function createWatchSession({ project, selected, stdin = process.stdin, stdout = process.stdout, setIntervalFn = setInterval, clearIntervalFn = clearInterval }) {
   let closed = false;
   let settled = !selected.active;
+  let watching = false;
   let interval;
   const tty = Boolean(stdin?.isTTY && stdin.setRawMode && stdout?.isTTY);
   const current = () => findRunReport(project, selected.id) ?? selected;
-  const draw = () => {
+  const paint = () => {
     const report = current();
     if (!report.active) settled = true;
-    const screen = `${renderTerminal(report, dashboardView(project))}\n${footer(settled)}`;
-    if (tty) stdout.write(`\x1b[H\x1b[2J${screen}`);
+    const screen = `${renderTerminal(report, dashboardView(project))}
+${footer(settled)}`;
+    if (watching && tty) stdout.write(`\x1b[H\x1b[2J${screen}`);
     else stdout.write(`${screen}\n`);
-    if (settled && interval) {
-      clearIntervalFn(interval);
-      interval = undefined;
-    }
+    if (settled && watching) close();
   };
   function close() {
     if (closed) return;
     closed = true;
     if (interval) clearIntervalFn(interval);
-    if (tty) {
+    if (watching && tty) {
       stdin.off("data", onKey);
       stdin.off("SIGINT", close);
       stdin.pause();
@@ -42,15 +41,21 @@ export function createWatchSession({ project, selected, stdin = process.stdin, s
   function onKey(chunk) {
     if (keyToCommand(chunk) === "close") close();
   }
-  draw();
+  paint();
   if (!settled && tty) {
+    watching = true;
     stdout.write("\x1b[?1049h\x1b[?25l");
     stdin.setRawMode(true);
     stdin.resume();
     stdin.on("data", onKey);
     stdin.on("SIGINT", close);
-    interval = setIntervalFn(draw, 2_000);
+    interval = setIntervalFn(paint, 2_000);
     if (typeof interval?.unref === "function") interval.unref();
+    if (settled) {
+      clearIntervalFn(interval);
+      interval = undefined;
+      close();
+    }
   }
-  return { close, settled: () => settled, active: tty && !settled };
+  return { close, settled: () => settled, active: () => watching && !closed };
 }
