@@ -24,16 +24,42 @@ async function select(reports) {
   } finally { prompt.close(); }
 }
 
+function render(selected) {
+  const report = loadRunReports(project).find(item => item.id === selected.id) ?? selected;
+  return `${renderTerminal(report, dashboardView(project))}\nPress q, Esc, or Ctrl+C to exit watch.`;
+}
+
+function watchRun(selected) {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    process.stdout.write(render(selected));
+    return;
+  }
+  const stdin = process.stdin;
+  const stdout = process.stdout;
+  let closed = false;
+  const draw = () => stdout.write(`\x1b[H\x1b[2J${render(selected)}`);
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    clearInterval(interval);
+    stdin.off("data", onKey);
+    stdin.setRawMode(false);
+    stdout.write("\x1b[?25h\x1b[?1049l");
+  };
+  const onKey = key => { if (["q", "Q", "\u001b", "\u0003"].includes(key)) close(); };
+  stdout.write("\x1b[?1049h\x1b[?25l");
+  stdin.setRawMode(true);
+  stdin.resume();
+  stdin.on("data", onKey);
+  draw();
+  const interval = setInterval(draw, 2_000);
+}
+
 async function main() {
   const selected = await select(loadRunReports(project));
   if (!selected) throw new Error("No run selected.");
-  const draw = () => {
-    if (watch) console.clear();
-    const report = loadRunReports(project).find(item => item.id === selected.id) ?? selected;
-    process.stdout.write(renderTerminal(report, dashboardView(project)));
-  };
-  draw();
-  if (watch) setInterval(draw, 1_000);
+  if (watch) watchRun(selected);
+  else process.stdout.write(renderTerminal(selected, dashboardView(project)));
 }
 
 main().catch(error => { console.error(error instanceof Error ? error.message : String(error)); process.exit(1); });
