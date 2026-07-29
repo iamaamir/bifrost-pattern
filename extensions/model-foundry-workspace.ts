@@ -1,7 +1,8 @@
 import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { basename, join, resolve } from "node:path";
+import { basename, join } from "node:path";
 import { Type } from "@earendil-works/pi-ai";
 import { defineTool, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { createPatternStore } from "../scripts/pattern-store.mjs";
 
 const workspaceTool = defineTool({
   name: "bifrost_create_evaluation_workspace",
@@ -14,7 +15,7 @@ const workspaceTool = defineTool({
       const runDirectory = process.env.BIFROST_PATTERN_RUN_DIRECTORY;
       if (!project || !runDirectory) throw new Error("Model Foundry workspace is unavailable.");
       if (!/^[a-z0-9-]{1,48}$/.test(spec.name)) throw new Error("Workspace name must be lowercase letters, digits, or hyphens.");
-      const destination = resolve(runDirectory, "model-foundry", "workspaces", `${spec.name}-${basename(project)}`);
+      const destination = createPatternStore(project).runs.foundryWorkspace(basename(runDirectory), `${spec.name}-${basename(project)}`);
       if (existsSync(destination)) throw new Error("Workspace already exists.");
       mkdirSync(destination, { recursive: true });
       cpSync(project, destination, { recursive: true, filter: path => ![".git", ".pi", "node_modules", "dist", "build", "coverage"].includes(basename(path)) });

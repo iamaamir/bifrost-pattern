@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -263,7 +263,7 @@ function finalize(code) {
   const failedWorkers = workers.filter(worker => worker.success !== true || worker.routing.verified !== true);
   const outcome = code === 0 && workers.length > 0 && failedWorkers.length === 0 ? "completed" : "failed";
   writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, startedAt: JSON.parse(readFileSync(ledgerPath, "utf8")).startedAt, endedAt: new Date().toISOString(), outerModel: model, workers, activities, routes, routingVerified: failedWorkers.length === 0, outcome }, null, 2)}\n`);
-  if (manifest.cleanup?.onTerminal === "run-artifacts") rmSync(runDirectory, { recursive: true, force: true });
+  if (manifest.cleanup?.onTerminal === "run-artifacts") store.runs.cleanup(id);
   process.exit(code ?? 1);
 }
 child.on("exit", finalize);

@@ -48,7 +48,7 @@ function load(directory, id) {
 export function resolveRecipe({ root, project, id }) {
   const candidates = [
     { directory: join(root, "recipes", id), source: "bundled" },
-    { directory: join(createPatternStore(project).recipes.directory(), id), source: "project" }
+    { directory: createPatternStore(project).recipes.directory(id), source: "project" }
   ];
   for (const candidate of candidates) {
     const resolved = load(candidate.directory, id);
