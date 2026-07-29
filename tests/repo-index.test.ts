@@ -43,10 +43,24 @@ test("uses installed ast-grep outline without storing source text", () => {
   const project = fixture();
   const run = (_command: string, args: string[]) => args[0] === "--version"
     ? { status: 0, stdout: "ast-grep 0.45.0" }
-    : { status: 0, stdout: JSON.stringify({ items: [{ file: "src/index.ts", name: "serve", symbolType: "function", range: { start: { line: 0 } }, text: "export function serve() {}" }] }) };
+    : { status: 0, stdout: JSON.stringify([
+      {
+        path: "src/index.ts",
+        language: "TypeScript",
+        items: [{ name: "serve", symbolType: "function", range: { start: { line: 0 } }, text: "export function serve() {}" }],
+      },
+      {
+        path: "src/server.ts",
+        language: "TypeScript",
+        items: [{ name: "server", symbolType: "function", range: { start: { line: 1 } }, text: "export function server() {}" }],
+      },
+    ]) };
   const index = buildRepoIndex({ project, cachePath: join(project, ".cache.json"), run });
   assert.equal(index.capabilities.astGrep.status, "available");
-  assert.deepEqual(index.capabilities.astGrep.symbols, [{ file: "src/index.ts", name: "serve", kind: "function", line: 0 }]);
+  assert.deepEqual(index.capabilities.astGrep.symbols, [
+    { file: "src/index.ts", name: "serve", kind: "function", line: 0 },
+    { file: "src/server.ts", name: "server", kind: "function", line: 1 },
+  ]);
   assert.doesNotMatch(JSON.stringify(index.capabilities.astGrep), /export function serve/);
   rmSync(project, { recursive: true, force: true });
 });

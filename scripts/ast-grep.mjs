@@ -66,13 +66,32 @@ export function astGrepOutline(project, run = spawnSync, command) {
   if (outline?.status !== 0) return { status: "failed", command: located.command, version: located.version, symbols: [] };
   try {
     const parsed = JSON.parse(String(outline.stdout ?? "[]"));
-    const items = Array.isArray(parsed) ? parsed : parsed.items ?? [];
-    const symbols = items.slice(0, 250).flatMap(item => {
-      const file = item.file ?? item.path;
-      const name = item.name;
-      if (!file || !name) return [];
-      return [{ file, name, kind: item.symbolType ?? item.kind ?? "symbol", line: item.range?.start?.line ?? item.start?.line ?? 0 }];
-    });
+    const entries = Array.isArray(parsed) ? parsed : parsed.items ?? [];
+    const symbols = [];
+    for (const entry of entries) {
+      const file = entry.file ?? entry.path;
+      const nested = Array.isArray(entry.items) ? entry.items : Array.isArray(entry.symbols) ? entry.symbols : [];
+      for (const item of nested) {
+        if (symbols.length >= 250) break;
+        const name = item.name ?? item.symbolName;
+        if (!file || !name) continue;
+        symbols.push({
+          file,
+          name,
+          kind: item.symbolType ?? item.kind ?? item.astKind ?? "symbol",
+          line: item.range?.start?.line ?? item.start?.line ?? 0,
+        });
+      }
+      if (symbols.length >= 250) break;
+      const name = entry.name;
+      if (!file || !name || nested.length > 0) continue;
+      symbols.push({
+        file,
+        name,
+        kind: entry.symbolType ?? entry.kind ?? entry.astKind ?? "symbol",
+        line: entry.range?.start?.line ?? entry.start?.line ?? 0,
+      });
+    }
     return { status: "available", command: located.command, version: located.version, symbols };
   } catch { return { status: "failed", command: located.command, version: located.version, symbols: [] }; }
 }
