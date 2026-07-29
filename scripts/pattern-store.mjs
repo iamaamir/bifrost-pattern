@@ -42,7 +42,7 @@ export function createPatternStore(project) {
     agents: { directory: () => join(root, "agents") },
     recipes: { directory: id => join(root, "recipes", artifactId(id)) },
     cache: { repoIndexPath: () => join(root, "cache", "repo-index.json") },
-    tools: { astGrepDirectory: () => join(root, "tools", "ast-grep"), astGrepCommand: () => join(root, "tools", "ast-grep", "node_modules", ".bin", process.platform === "win32" ? "sg.cmd" : "sg") },
+    tools: { astGrepDirectory: () => join(root, "tools", "ast-grep"), astGrepCommand: () => join(root, "tools", "ast-grep", "node_modules", ".bin", process.platform === "win32" ? "ast-grep.cmd" : "ast-grep") },
     runs: {
       directory: runDirectory,
       create: id => directory(runDirectory(id)),

@@ -14,7 +14,7 @@ function versionOf(command, project, run) {
 }
 
 export function locateAstGrep({ project, run = spawnSync }) {
-  for (const command of ["sg", "ast-grep", localCommand(project)]) {
+  for (const command of [localCommand(project), "ast-grep", "sg"]) {
     if (command.includes("node_modules") && !existsSync(command) && run === spawnSync) continue;
     const version = versionOf(command, project, run);
     if (version) return { status: "available", command, version };

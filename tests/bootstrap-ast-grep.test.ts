@@ -5,10 +5,11 @@ import { join } from "node:path";
 import test from "node:test";
 import { ensureAstGrep, locateAstGrep, prepareAstGrep } from "../scripts/bootstrap-ast-grep.mjs";
 
-test("uses existing ast-grep before local install", () => {
+test("uses local ast-grep before global alias", () => {
   const project = mkdtempSync(join(tmpdir(), "bifrost-ast-grep-"));
-  const run = (command: string) => command === "sg" ? { status: 0, stdout: "ast-grep 0.45.0" } : { status: 1 };
-  assert.deepEqual(locateAstGrep({ project, run }), { status: "available", command: "sg", version: "ast-grep 0.45.0" });
+  const local = join(project, ".pi", "bifrost-patterns", "tools", "ast-grep", "node_modules", ".bin", process.platform === "win32" ? "ast-grep.cmd" : "ast-grep");
+  const run = (command: string) => command === local ? { status: 0, stdout: "ast-grep 0.45.0" } : command === "sg" ? { status: 0, stdout: "ast-grep 0.45.0" } : { status: 1 };
+  assert.deepEqual(locateAstGrep({ project, run }), { status: "available", command: local, version: "ast-grep 0.45.0" });
   rmSync(project, { recursive: true, force: true });
 });
 
@@ -31,7 +32,7 @@ test("installs pinned local ast-grep after consent", () => {
   };
   const result = ensureAstGrep({ project, approved: true, run });
   assert.equal(result.status, "installed");
-  assert.match(result.command!, /\.pi\/bifrost-patterns\/tools\/ast-grep\/node_modules/);
+  assert.match(result.command!, /\.pi\/bifrost-patterns\/tools\/ast-grep\/node_modules\/\.bin\/ast-grep/);
   rmSync(project, { recursive: true, force: true });
 });
 

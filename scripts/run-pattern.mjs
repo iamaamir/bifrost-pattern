@@ -172,10 +172,7 @@ if (!dryRun && manifest.preflight?.some(step => step.capability === "repo-index"
     },
   });
   monitor.record("preflight.ast-grep", { ...astGrep, requested: true });
-  if (astGrep.status === "manual") {
-    console.error(`ast-grep install failed: ${astGrep.reason ?? "unknown reason"}. Install it manually, then rerun. Example: npm install --prefix .pi/bifrost-patterns/tools/ast-grep @ast-grep/cli@0.45.0 --no-audit --no-fund`);
-    process.exit(1);
-  }
+  if (astGrep.status === "manual") process.exit(1);
   if (astGrep.status === "fallback") console.warn(`ast-grep install failed: ${astGrep.reason ?? "unknown reason"}; continuing with deterministic repository index.`);
 }
 
