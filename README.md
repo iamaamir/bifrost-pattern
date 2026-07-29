@@ -45,6 +45,23 @@ bifrost-pattern fixed-orchestrator-workers . --orchestrator-model provider/model
 
 Use `--dry-run` to inspect launch command without starting Pi.
 
+## Run dashboard
+
+```bash
+bifrost-pattern runs              # recent-first fzf picker; numbered fallback
+bifrost-pattern runs latest       # newest run
+bifrost-pattern runs <run-id>     # exact run
+bifrost-pattern runs --watch      # refresh active run view
+```
+
+Dashboard reads redacted local ledgers only. Configure built-in field order in `.pi/bifrost-patterns/dashboard.json`:
+
+```json
+{ "fields": ["recipe", "outcome", "outerModel", "workers", "tokens"] }
+```
+
+Token usage appears only when recorded by trusted host evidence; otherwise it shows `unavailable`.
+
 ## Model
 
 ```text

@@ -149,7 +149,7 @@ if (!dryRun) for (const step of manifest.preflight ?? []) {
   }
 }
 
-writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, startedAt: new Date().toISOString(), outerModel: model, workers: [], routes: [], outcome: "running" }, null, 2)}\n`);
+writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, recipe, startedAt: new Date().toISOString(), outerModel: model, workers: [], routes: [], outcome: "running" }, null, 2)}\n`);
 
 writeFileSync(join(runDirectory, "feedback.json"), `${JSON.stringify({
   recipe,
@@ -262,7 +262,7 @@ function finalize(code) {
   for (const worker of workers) if (directWorkers.has(worker.agent)) worker.routing = { verified: Boolean(worker.model), direct: true, model: worker.model };
   const failedWorkers = workers.filter(worker => worker.success !== true || worker.routing.verified !== true);
   const outcome = code === 0 && workers.length > 0 && failedWorkers.length === 0 ? "completed" : "failed";
-  writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, startedAt: JSON.parse(readFileSync(ledgerPath, "utf8")).startedAt, endedAt: new Date().toISOString(), outerModel: model, workers, activities, routes, routingVerified: failedWorkers.length === 0, outcome }, null, 2)}\n`);
+  writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, recipe, startedAt: JSON.parse(readFileSync(ledgerPath, "utf8")).startedAt, endedAt: new Date().toISOString(), outerModel: model, workers, activities, routes, routingVerified: failedWorkers.length === 0, outcome }, null, 2)}\n`);
   if (manifest.cleanup?.onTerminal === "run-artifacts") store.runs.cleanup(id);
   process.exit(code ?? 1);
 }
