@@ -12,7 +12,7 @@ Do not use this recipe to hide model choices, replay failures, or let workers in
 
 ```text
 outer orchestrator (fixed/pinned model)
-  ├─ scout       read-only evidence
+  ├─ scout       one exact slice, read-only evidence
   ├─ implementer one bounded checkpoint
   └─ verifier    independent checks
 
@@ -43,7 +43,7 @@ Outer runs from isolated profile. Runner preserves user extensions and Pi-subage
 
 If runner cannot launch in your environment, use [`prompts/orchestrator.md`](prompts/orchestrator.md) plus role prompts manually. Orchestrator alone reviews, integrates, and performs mutating Git operations after worker evidence.
 
-This recipe now seeds a preflight `repo-index` with git SHA, branch, and AST/graph evidence, then uses it as graph-first bootstrap. Workers get a tiny task pack instead of cold-start discovery. Each run also writes `monitor.json` and `monitor.jsonl` under `.pi/bifrost-patterns/runs/<run-id>/` so you can inspect bootstrap, preflight, and completion without extra commands.
+This recipe now seeds a preflight `repo-index` with git SHA, branch, and AST/graph evidence, then uses it as graph-first bootstrap. Workers get an exact slice pack instead of cold-start discovery. Scout retries stay on same slice once only; no random flow, no fallback wandering. Each run also writes `monitor.json` and `monitor.jsonl` under `.pi/bifrost-patterns/runs/<run-id>/` so you can inspect bootstrap, preflight, and completion without extra commands.
 
 For the memory and bootstrap design behind this recipe, see [`docs/repo-memory-bootstrap.md`](../../docs/repo-memory-bootstrap.md).
 

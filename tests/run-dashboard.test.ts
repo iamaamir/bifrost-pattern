@@ -65,3 +65,31 @@ test("uses nested session logs when worker lifecycle events are incomplete", () 
   assert.match(output, /openai\/reviewer-mini/);
   assert.doesNotMatch(output, /model pending/);
 });
+
+test("uses live monitor state before finalize", () => {
+  const project = mkdtempSync(join(tmpdir(), "bifrost-dashboard-"));
+  const runs = join(project, ".pi", "bifrost-patterns", "runs");
+  const runDirectory = join(project, ".pi", "bifrost-patterns", "outer-runs", "run-3");
+  mkdirSync(runs, { recursive: true });
+  mkdirSync(runDirectory, { recursive: true });
+  writeFileSync(join(runDirectory, "monitor.json"), JSON.stringify({
+    workers: [
+      { runId: "worker-3", agent: "reviewer", status: "running", model: "openai/reviewer-mini", durationMs: 21000, verified: true },
+    ],
+  }));
+  writeFileSync(join(runs, "run-3.json"), JSON.stringify({
+    runId: "run-3",
+    recipe: "fixed-orchestrator-workers",
+    startedAt: "2026-07-29T10:00:00.000Z",
+    outerModel: "provider/outer",
+    outcome: "running",
+  }));
+
+  const [report] = loadRunReports(project, { now: new Date("2026-07-29T10:01:00.000Z") });
+  assert.equal(report.active, true);
+  assert.equal(report.workers.length, 1);
+  assert.equal(report.workers[0].source, "monitor");
+  assert.equal(report.workers[0].status, "running");
+  assert.equal(report.workers[0].model, "openai/reviewer-mini");
+  assert.equal(report.workers[0].durationSeconds, 21);
+});

@@ -62,6 +62,31 @@ function readSessionWorkers(runDirectory) {
   return result;
 }
 
+function readMonitorWorkers(runDirectory) {
+  const monitor = readJson(join(runDirectory, "monitor.json"));
+  if (!Array.isArray(monitor?.workers)) return [];
+  return monitor.workers.flatMap(worker => {
+    if (!worker || typeof worker !== "object") return [];
+    const item = worker;
+    const runId = typeof item.runId === "string" ? item.runId : undefined;
+    const agent = typeof item.agent === "string" ? item.agent : undefined;
+    if (!runId && !agent) return [];
+    return [{
+      runId,
+      agent,
+      status: typeof item.status === "string" ? item.status : undefined,
+      source: "monitor",
+      model: typeof item.model === "string" ? item.model : undefined,
+      tier: typeof item.tier === "string" ? item.tier : undefined,
+      verified: item.verified === true,
+      success: typeof item.success === "boolean" ? item.success : undefined,
+      durationSeconds: typeof item.durationMs === "number" ? Math.round(item.durationMs / 1000) : typeof item.durationSeconds === "number" ? item.durationSeconds : undefined,
+      errorKind: typeof item.errorKind === "string" ? item.errorKind : undefined,
+      path: "monitor.json",
+    }];
+  });
+}
+
 function routeFor(routes, runId) {
   return routes.find(candidate => candidate.subagentRunId === runId || candidate.subagent_run_id === runId);
 }
@@ -114,11 +139,31 @@ export function collectRunWorkers({ project, runDirectory, runId, events, routes
   const terminals = eventSource.filter(event => event.type === "worker_terminal");
   const started = eventSource.filter(event => event.type === "worker_started");
   const requested = eventSource.filter(event => event.type === "worker_requested");
+  const monitorWorkers = runDirectory ? readMonitorWorkers(runDirectory) : [];
   const sessionWorkers = runDirectory ? readSessionWorkers(runDirectory) : [];
-  const seenAgents = new Set([...terminals, ...started, ...sessionWorkers].map(event => event.agent));
+  const seenAgents = new Set([...terminals, ...started, ...monitorWorkers, ...sessionWorkers].map(event => event.agent));
   const workers = [];
   for (const event of terminals) workers.push(summarizeEventWorker(event, routeSource, event.success ? "completed" : "failed"));
   for (const event of started) if (!terminals.some(terminal => terminal.runId === event.runId)) workers.push(summarizeEventWorker(event, routeSource, "running"));
+  for (const monitorWorker of monitorWorkers) {
+    const existing = workers.find(worker => worker.runId === monitorWorker.runId || (worker.agent === monitorWorker.agent && worker.status !== "requested"));
+    if (existing) {
+      Object.assign(existing, {
+        ...monitorWorker,
+        status: existing.status === "completed" || existing.status === "failed" ? existing.status : (phase === "final" ? "completed" : monitorWorker.status ?? "running"),
+        model: existing.model ?? monitorWorker.model,
+        durationSeconds: existing.durationSeconds ?? monitorWorker.durationSeconds,
+        verified: existing.verified || monitorWorker.verified,
+        source: existing.source ?? monitorWorker.source,
+      });
+    } else {
+      workers.push({
+        ...monitorWorker,
+        status: phase === "final" ? (monitorWorker.status ?? (monitorWorker.success === false ? "failed" : "completed")) : (monitorWorker.status ?? "running"),
+        success: phase === "final" ? (monitorWorker.success ?? true) : monitorWorker.success,
+      });
+    }
+  }
   for (const sessionWorker of sessionWorkers) {
     const existing = workers.find(worker => worker.runId === sessionWorker.runId || (worker.agent === sessionWorker.agent && worker.source === "event" && worker.status !== "requested"));
     if (existing) {
