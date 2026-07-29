@@ -23,7 +23,7 @@ Before Pi opens, runner asks for one discovery scope (or pass `--input discovery
 
 ## Token-efficient discovery
 
-Before Pi starts, recipe builds local `.pi/bifrost-patterns/cache/repo-index.json` and copies compact run-specific index into drafts. Index contains hashes, paths, language/directory counts, selected manifest metadata, entry/test candidates, and bounded import edges—never source contents. If already installed, `sg` or `ast-grep` adds capped, sanitized AST symbol outlines. When absent, runner asks before installing pinned `@ast-grep/cli@0.45.0` under `.pi/bifrost-patterns/tools/ast-grep`; it never changes target `package.json` or installs globally. For noninteractive consent use `--install-ast-grep`. Workers use index data to choose evidence files, then verify claims from those files.
+Before Pi starts, recipe builds local `.pi/bifrost-patterns/cache/repo-index.json` and copies compact run-specific index into drafts. Index contains hashes, paths, language/directory counts, selected manifest metadata, entry/test candidates, and bounded import edges—never source contents. If already installed, `sg` or `ast-grep` adds capped, sanitized AST symbol outlines. When absent, runner asks before installing pinned `@ast-grep/cli@0.45.0` under `.pi/bifrost-patterns/tools/ast-grep`; if install fails, runner asks whether to continue without AST-grep or exit and install it manually. It never changes target `package.json` or installs globally. For noninteractive consent use `--install-ast-grep`. Workers use index data to choose evidence files, then verify claims from those files.
 
 ## Drafts
 

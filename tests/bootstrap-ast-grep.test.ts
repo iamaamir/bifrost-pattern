@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { ensureAstGrep, locateAstGrep } from "../scripts/bootstrap-ast-grep.mjs";
+import { ensureAstGrep, locateAstGrep, prepareAstGrep } from "../scripts/bootstrap-ast-grep.mjs";
 
 test("uses existing ast-grep before local install", () => {
   const project = mkdtempSync(join(tmpdir(), "bifrost-ast-grep-"));
@@ -32,5 +32,34 @@ test("installs pinned local ast-grep after consent", () => {
   const result = ensureAstGrep({ project, approved: true, run });
   assert.equal(result.status, "installed");
   assert.match(result.command!, /\.pi\/bifrost-patterns\/tools\/ast-grep\/node_modules/);
+  rmSync(project, { recursive: true, force: true });
+});
+
+test("reports reason when ast-grep install does not yield runnable binary", () => {
+  const project = mkdtempSync(join(tmpdir(), "bifrost-ast-grep-"));
+  const run = (command: string) => command === "npm" ? { status: 0 } : { status: 1 };
+  const result = ensureAstGrep({ project, approved: true, run });
+  assert.equal(result.status, "failed");
+  assert.match(result.reason ?? "", /binary unavailable after install/);
+  rmSync(project, { recursive: true, force: true });
+});
+
+test("asks before installing ast-grep and respects decline", async () => {
+  const project = mkdtempSync(join(tmpdir(), "bifrost-ast-grep-"));
+  let asked = false;
+  const run = (command: string) => command === "npm" ? { status: 0 } : { status: 1 };
+  const result = await prepareAstGrep({ project, approved: false, run, ask: async () => { asked = true; return "n"; } });
+  assert.equal(result.status, "unavailable");
+  assert.equal(asked, true);
+  rmSync(project, { recursive: true, force: true });
+});
+
+test("falls back after failed ast-grep install when user chooses continue", async () => {
+  const project = mkdtempSync(join(tmpdir(), "bifrost-ast-grep-"));
+  const run = (command: string) => command === "npm" ? { status: 0 } : { status: 1 };
+  const answers = ["y", "2"];
+  const result = await prepareAstGrep({ project, approved: false, run, ask: async () => answers.shift() ?? "2" });
+  assert.equal(result.status, "fallback");
+  assert.match(result.reason ?? "", /binary unavailable after install/);
   rmSync(project, { recursive: true, force: true });
 });
