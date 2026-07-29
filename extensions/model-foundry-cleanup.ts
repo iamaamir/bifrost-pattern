@@ -1,7 +1,8 @@
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
 import { Type } from "@earendil-works/pi-ai";
 import { defineTool, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { createPatternStore } from "../scripts/pattern-store.mjs";
 
 const completionPath = () => join(process.env.BIFROST_PATTERN_RUN_DIRECTORY ?? ".", ".model-foundry-complete.json");
 
@@ -30,7 +31,8 @@ export default function (pi: ExtensionAPI) {
   pi.on("agent_settled", () => {
     const runDirectory = process.env.BIFROST_PATTERN_RUN_DIRECTORY;
     if (!runDirectory || !existsSync(completionPath())) return;
-    rmSync(join(runDirectory, "model-foundry"), { recursive: true, force: true });
-    rmSync(join(runDirectory, "agent"), { recursive: true, force: true });
+    const project = process.env.BIFROST_PATTERN_PROJECT;
+    if (!project) return;
+    createPatternStore(project).runs.cleanupFoundry(basename(runDirectory));
   });
 }

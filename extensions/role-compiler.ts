@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { delimiter, join, resolve } from "node:path";
+import { delimiter, join } from "node:path";
 import { Type } from "@earendil-works/pi-ai";
 import { defineTool, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { compileRole } from "../role-contract.ts";
+import { createPatternStore } from "../scripts/pattern-store.mjs";
 
 function registerRoleDirectory(directory: string) {
   const current = process.env.PI_SUBAGENT_EXTRA_AGENT_DIRS?.split(delimiter).filter(Boolean) ?? [];
@@ -26,7 +27,7 @@ const roleCompiler = defineTool({
     try {
       const project = process.env.BIFROST_PATTERN_PROJECT;
       if (!project) throw new Error("Patterns target project is unavailable.");
-      const directory = resolve(project, ".pi", "bifrost-patterns", "agents");
+      const directory = createPatternStore(project).agents.directory();
       const path = join(directory, `${spec.name}.md`);
       if (existsSync(path)) throw new Error(`Role '${spec.name}' already exists. Tune ${path} directly.`);
       mkdirSync(directory, { recursive: true });

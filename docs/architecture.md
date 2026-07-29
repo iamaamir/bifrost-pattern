@@ -75,6 +75,12 @@ valid setup           → leave unchanged → open Pi
 
 `--no-open` supports automation. Recipe-internal setup calls same primitive but never launches Pi. Existing valid Bifrost config is not reinstalled, rewritten, or re-probed by default.
 
+## Pattern store
+
+`PatternStore` owns every Patterns artifact under `.pi/bifrost-patterns/`: profile, generated agents, project recipes, local tools, cache, run artifacts, and ledgers. Callers use named store operations rather than reconstructing paths. Scoped cleanup removes only ephemeral run material; user-tunable agents, recipes, profile, approved tools, cache, and redacted ledgers remain.
+
+Pi and Pi-Bifrost own their own `.pi` configuration and state outside this store.
+
 ## Evidence and privacy
 
 Runtime writes redacted local records only:

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { capabilityErrors } from "./capability-plan.mjs";
+import { createPatternStore } from "./pattern-store.mjs";
 
 export function validateRecipe(recipe, directory) {
   const errors = [];
@@ -47,7 +48,7 @@ function load(directory, id) {
 export function resolveRecipe({ root, project, id }) {
   const candidates = [
     { directory: join(root, "recipes", id), source: "bundled" },
-    { directory: join(project, ".pi", "bifrost-patterns", "recipes", id), source: "project" },
+    { directory: join(createPatternStore(project).recipes.directory(), id), source: "project" }
   ];
   for (const candidate of candidates) {
     const resolved = load(candidate.directory, id);

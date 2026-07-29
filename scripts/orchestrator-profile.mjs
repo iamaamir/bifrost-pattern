@@ -1,26 +1,13 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { createPatternStore } from "./pattern-store.mjs";
 
 export function orchestratorProfilePath(project) {
-  return join(project, ".pi", "bifrost-patterns.json");
+  return createPatternStore(project).profile.path;
 }
 
 export function loadOrchestratorProfile(project) {
-  const path = orchestratorProfilePath(project);
-  return existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : {};
+  return createPatternStore(project).profile.read();
 }
 
 export function saveOrchestratorModel({ project, recipe, model }) {
-  const path = orchestratorProfilePath(project);
-  const profile = loadOrchestratorProfile(project);
-  const next = {
-    ...profile,
-    patterns: {
-      ...profile.patterns,
-      [recipe]: { ...profile.patterns?.[recipe], orchestratorModel: model }
-    }
-  };
-  mkdirSync(join(project, ".pi"), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(next, null, 2)}\n`);
-  return path;
+  return createPatternStore(project).profile.saveModel(recipe, model);
 }

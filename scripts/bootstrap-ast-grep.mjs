@@ -1,11 +1,11 @@
 import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { createPatternStore } from "./pattern-store.mjs";
 
 export const AST_GREP_VERSION = "0.45.0";
 
 function localCommand(project) {
-  return join(project, ".pi", "bifrost-patterns", "tools", "ast-grep", "node_modules", ".bin", process.platform === "win32" ? "sg.cmd" : "sg");
+  return createPatternStore(project).tools.astGrepCommand();
 }
 
 function versionOf(command, project, run) {
@@ -26,7 +26,7 @@ export function ensureAstGrep({ project, approved, run = spawnSync }) {
   const existing = locateAstGrep({ project, run });
   if (existing.status === "available") return existing;
   if (!approved) return existing;
-  const directory = join(project, ".pi", "bifrost-patterns", "tools", "ast-grep");
+  const directory = createPatternStore(project).tools.astGrepDirectory();
   const result = run("npm", ["install", "--prefix", directory, `@ast-grep/cli@${AST_GREP_VERSION}`, "--no-audit", "--no-fund"], { cwd: project, stdio: "inherit" });
   if (result?.status !== 0) return { status: "failed" };
   const installed = locateAstGrep({ project, run });

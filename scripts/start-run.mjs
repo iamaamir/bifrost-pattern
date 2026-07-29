@@ -1,7 +1,8 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { resolveRecipe } from "./recipe-resolver.mjs";
+import { createPatternStore } from "./pattern-store.mjs";
 
 const [recipe, project] = process.argv.slice(2);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -13,8 +14,7 @@ if (!recipe || !projectPath || !existsSync(projectPath)) {
 
 const resolvedRecipe = resolveRecipe({ root, project: projectPath, id: recipe });
 const id = `${new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-")}-${basename(projectPath)}`;
-const runDirectory = join(projectPath, ".pi", "bifrost-patterns", "manual-runs", id);
-mkdirSync(runDirectory, { recursive: true });
+const runDirectory = createPatternStore(projectPath).manualRuns.create(id);
 
 const feedback = {
   recipe,

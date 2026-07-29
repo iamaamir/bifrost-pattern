@@ -13,6 +13,7 @@ import { ensureAstGrep } from "./bootstrap-ast-grep.mjs";
 import { buildModelInventory } from "./model-inventory.mjs";
 import { resolveCapabilityPlan, selectOuterTools } from "./capability-plan.mjs";
 import { loadOrchestratorProfile, saveOrchestratorModel } from "./orchestrator-profile.mjs";
+import { createPatternStore } from "./pattern-store.mjs";
 
 const [recipe, possibleProject, ...remaining] = process.argv.slice(2);
 const projectArg = possibleProject && !possibleProject.startsWith("-") ? possibleProject : ".";
@@ -28,6 +29,7 @@ const installAstGrep = flags.includes("--install-ast-grep");
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const project = resolve(projectArg);
+const store = createPatternStore(project);
 if (!recipe || !existsSync(project)) {
   console.error("Usage: bifrost-pattern <recipe-id> [project-path] [--orchestrator-model provider/model] [--outer-tools tool,...] [--input name=value] [--install-ast-grep] [--dry-run]");
   process.exit(1);
@@ -118,10 +120,10 @@ if (!dryRun && manifest.preflight?.some(step => step.capability === "repo-index"
 }
 
 const id = `${new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-")}-${basename(project)}`;
-const runDirectory = join(project, ".pi", "bifrost-patterns", "outer-runs", id);
+const runDirectory = store.runs.directory(id);
 const outerDirectory = join(runDirectory, "outer");
-const ledgerDirectory = join(project, ".pi", "bifrost-patterns", "runs");
-const ledgerPath = join(ledgerDirectory, `${id}.json`);
+const ledgerDirectory = store.ledger.directory();
+const ledgerPath = store.ledger.path(id);
 const eventPath = join(ledgerDirectory, `${id}.events.jsonl`);
 mkdirSync(outerDirectory, { recursive: true });
 mkdirSync(join(outerDirectory, ".pi"), { recursive: true });
@@ -131,7 +133,7 @@ const preflightArtifacts = {};
 if (!dryRun) for (const step of manifest.preflight ?? []) {
   if (step.capability === "repo-index") {
     const output = join(runDirectory, step.output);
-    const index = buildRepoIndex({ project, cachePath: join(project, ".pi", "bifrost-patterns", "cache", "repo-index.json"), astGrepCommand: astGrep.command });
+    const index = buildRepoIndex({ project, cachePath: store.cache.repoIndexPath(), astGrepCommand: astGrep.command });
     mkdirSync(dirname(output), { recursive: true });
     writeFileSync(output, `${JSON.stringify(index, null, 2)}\n`, { mode: 0o600 });
     preflightArtifacts[step.capability] = output;

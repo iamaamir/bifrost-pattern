@@ -33,7 +33,7 @@ Install Pi-subagents once before first run:
 pi install npm:pi-subagents
 ```
 
-Runner lists available Pi models on first run and saves chosen outer model in target `.pi/bifrost-patterns.json`. It opens one outer Pi session with Pi-subagents FleetView. Outer has only `subagent` and `subagent_wait`; it launches `bifrost-scout`, `bifrost-implementer`, and `bifrost-verifier` workers and receives batched completion wakeups in same session.
+Runner lists available Pi models on first run and saves chosen outer model in target `.pi/bifrost-patterns/profile.json`. It opens one outer Pi session with Pi-subagents FleetView. Outer has only `subagent` and `subagent_wait`; it launches `bifrost-scout`, `bifrost-implementer`, and `bifrost-verifier` workers and receives batched completion wakeups in same session.
 
 Workers run in target project, so normal project Bifrost routing applies. Read-only workers can run in parallel. Pi-subagents worktrees are required for parallel writers. Role policies scope tools; Patterns worker guard blocks mutating Git commands.
 

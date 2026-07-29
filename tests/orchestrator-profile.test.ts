@@ -11,7 +11,7 @@ test("stores orchestrator profiles in Pi project state", () => {
   assert.deepEqual(loadOrchestratorProfile(project), {});
   const path = saveOrchestratorModel({ project, recipe: "fixed-orchestrator-workers", model: "provider/model" });
 
-  assert.equal(path, join(project, ".pi", "bifrost-patterns.json"));
+  assert.equal(path, join(project, ".pi", "bifrost-patterns", "profile.json"));
   assert.equal(existsSync(path), true);
   assert.deepEqual(JSON.parse(readFileSync(path, "utf8")), {
     patterns: { "fixed-orchestrator-workers": { orchestratorModel: "provider/model" } }

@@ -35,7 +35,7 @@ From target project:
 bifrost-pattern fixed-orchestrator-workers [project-path]
 ```
 
-If Bifrost setup is missing, workflow asks before setup. It then asks for fixed outer `provider/model`; choice is saved in target `.pi/bifrost-patterns.json`.
+If Bifrost setup is missing, workflow asks before setup. It then asks for fixed outer `provider/model`; choice is saved in target `.pi/bifrost-patterns/profile.json`.
 
 ```bash
 bifrost-pattern repo-onboarding . --input discoveryScope=source-only
