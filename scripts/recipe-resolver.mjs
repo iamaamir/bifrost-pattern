@@ -63,5 +63,25 @@ export function listBundledRecipes(root) {
   return readdirSync(recipesRoot, { withFileTypes: true })
     .filter(entry => entry.isDirectory())
     .map(entry => load(join(recipesRoot, entry.name), entry.name))
-    .filter(Boolean);
+    .filter(Boolean)
+    .map(recipe => ({ ...recipe, source: "bundled" }));
+}
+
+export function listProjectRecipes(project) {
+  const recipesRoot = join(createPatternStore(project).root, "recipes");
+  if (!existsSync(recipesRoot)) return [];
+  return readdirSync(recipesRoot, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => load(join(recipesRoot, entry.name), entry.name))
+    .filter(Boolean)
+    .map(recipe => ({ ...recipe, source: "project" }));
+}
+
+export function listAvailableRecipes(root, project) {
+  const seen = new Set();
+  return [...listBundledRecipes(root), ...listProjectRecipes(project)].filter(recipe => {
+    if (seen.has(recipe.id)) return false;
+    seen.add(recipe.id);
+    return true;
+  });
 }

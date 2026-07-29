@@ -14,10 +14,38 @@ import { buildModelInventory } from "./model-inventory.mjs";
 import { resolveCapabilityPlan, selectOuterTools } from "./capability-plan.mjs";
 import { loadOrchestratorProfile, saveOrchestratorModel } from "./orchestrator-profile.mjs";
 import { createPatternStore } from "./pattern-store.mjs";
+import { chooseRecipe } from "./recipe-picker.mjs";
 
-const [recipe, possibleProject, ...remaining] = process.argv.slice(2);
-const projectArg = possibleProject && !possibleProject.startsWith("-") ? possibleProject : ".";
-const flags = possibleProject && !possibleProject.startsWith("-") ? remaining : [possibleProject, ...remaining].filter(Boolean);
+const rawArgs = process.argv.slice(2);
+const flags = [];
+let recipeArg;
+let projectArg = ".";
+for (let i = 0; i < rawArgs.length; i += 1) {
+  const arg = rawArgs[i];
+  if (arg === "--project") {
+    projectArg = rawArgs[i + 1] ?? ".";
+    i += 1;
+    continue;
+  }
+  if (arg === "--orchestrator-model" || arg === "--input" || arg === "--outer-tools") {
+    flags.push(arg, rawArgs[i + 1]);
+    i += 1;
+    continue;
+  }
+  if (arg.startsWith("-")) {
+    flags.push(arg);
+    continue;
+  }
+  if (!recipeArg) {
+    recipeArg = arg;
+    continue;
+  }
+  if (projectArg === ".") {
+    projectArg = arg;
+    continue;
+  }
+  flags.push(arg);
+}
 const option = name => {
   const index = flags.indexOf(name);
   return index >= 0 ? flags[index + 1] : undefined;
@@ -26,14 +54,21 @@ const options = name => flags.flatMap((flag, index) => flag === name && flags[in
 const dryRun = flags.includes("--dry-run");
 const yes = flags.includes("--yes");
 const installAstGrep = flags.includes("--install-ast-grep");
+const help = flags.includes("--help") || flags.includes("-h");
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const project = resolve(projectArg);
 const store = createPatternStore(project);
-if (!recipe || !existsSync(project)) {
-  console.error("Usage: bifrost-pattern <recipe-id> [project-path] [--orchestrator-model provider/model] [--outer-tools tool,...] [--input name=value] [--install-ast-grep] [--dry-run]");
+if (help) {
+  console.log("Usage: bifrost-pattern [recipe-id] [project-path] [--orchestrator-model provider/model] [--outer-tools tool,...] [--input name=value] [--install-ast-grep] [--dry-run] [--help]");
+  process.exit(0);
+}
+if (!existsSync(project)) {
+  console.error(`Project '${project}' does not exist.`);
   process.exit(1);
 }
+const selectedRecipe = recipeArg ? recipeArg : await chooseRecipe({ root, project });
+const recipe = selectedRecipe.id ?? selectedRecipe;
 let resolvedRecipe;
 try {
   resolvedRecipe = resolveRecipe({ root, project, id: recipe });

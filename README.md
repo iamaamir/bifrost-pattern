@@ -48,6 +48,8 @@ Use `--dry-run` to inspect launch command without starting Pi.
 ## Run dashboard
 
 ```bash
+npx bifrost-pattern@latest        # pick recipe
+npx bifrost-pattern@latest --help # usage
 bifrost-pattern runs              # recent-first fzf picker; numbered fallback
 bifrost-pattern runs latest       # newest run
 bifrost-pattern runs <run-id>     # exact run
