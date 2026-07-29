@@ -95,6 +95,8 @@ bundled recipes
 
 A project recipe needs a positive integer `version`, `runtime: "pi"`, `safety.automaticPromptReplay: false`, and an `outer.prompt` Markdown file. Recipes may declare select inputs; runner collects them before Pi starts. Pass values noninteractively with `--input name=value`.
 
+Recipes default to standard outer/worker capabilities. Only selected runtime kinds may grant privileged behavior: `foundry` outer, `answer-evaluator`, and `artifact-evaluator` direct workers. Recipe JSON cannot grant arbitrary tools, extensions, model bypasses, or workspace writes.
+
 ## Validation
 
 ```bash

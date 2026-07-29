@@ -26,7 +26,13 @@
   "preflight": [
     { "capability": "model-inventory", "output": "model-foundry/model-inventory.json" }
   ],
-  "directWorkers": ["bifrost-model-evaluator", "bifrost-model-artifact-evaluator"],
+  "capabilities": {
+    "outer": "foundry",
+    "directWorkers": {
+      "bifrost-model-evaluator": "answer-evaluator",
+      "bifrost-model-artifact-evaluator": "artifact-evaluator"
+    }
+  },
   "cleanup": { "onTerminal": "run-artifacts" },
   "requiresExistingBifrost": true,
   "requires": {

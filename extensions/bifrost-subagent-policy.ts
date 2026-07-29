@@ -15,6 +15,15 @@ function errorKind(error: unknown) {
   return text ? "worker_error" : undefined;
 }
 
+function directWorkerKind(agent: string | undefined) {
+  try {
+    const plan = JSON.parse(process.env.BIFROST_PATTERN_CAPABILITY_PLAN ?? "{}");
+    return plan.directWorkers?.[agent ?? ""];
+  } catch {
+    return undefined;
+  }
+}
+
 export default function (pi: ExtensionAPI) {
   pi.events.on("subagent:async-complete", (data: Record<string, unknown>) => {
     record({
@@ -34,12 +43,15 @@ export default function (pi: ExtensionAPI) {
     const project = process.env.BIFROST_PATTERN_PROJECT;
     if (!project) return { block: true, reason: "Patterns target project is unavailable." };
     const agent = typeof event.input.agent === "string" ? event.input.agent : undefined;
-    if (agent !== "bifrost-model-artifact-evaluator") event.input.cwd = project;
+    const directKind = directWorkerKind(agent);
     event.input.artifacts = false;
+    if (!directKind) event.input.cwd = project;
     if (agent) {
-      const guard = `${process.env.BIFROST_PATTERN_ROOT}/extensions/worker-guard.ts`;
-      const extensions = Array.isArray(event.input.subagentOnlyExtensions) ? event.input.subagentOnlyExtensions : [];
-      event.input.subagentOnlyExtensions = [...extensions, guard];
+      if (!directKind) {
+        const guard = `${process.env.BIFROST_PATTERN_ROOT}/extensions/worker-guard.ts`;
+        const extensions = Array.isArray(event.input.subagentOnlyExtensions) ? event.input.subagentOnlyExtensions : [];
+        event.input.subagentOnlyExtensions = [...extensions, guard];
+      }
       record({ type: "worker_requested", agent });
       return;
     }

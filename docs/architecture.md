@@ -38,7 +38,7 @@ Outer session gets:
 
 - resolved recipe prompt and declared inputs;
 - paths to deterministic preflight artifacts;
-- Pi-subagents and Pattern custom tools;
+- only tools/extensions selected by recipe capability plan;
 - generated-role directory registration.
 
 ### Standard workers
@@ -47,13 +47,13 @@ Outer session gets:
 
 ### Direct evaluators
 
-Some recipes need exact candidate model selection, not routing. Manifest `directWorkers` declares these names. Model Foundry evaluators require explicit configured candidate model and run with Bifrost disabled.
+Some recipes need exact candidate model selection, not routing. Manifest `capabilities.directWorkers` maps declared worker names to selected evaluator kinds. Model Foundry evaluators require explicit configured candidate model and run with Bifrost disabled.
 
 Answer evaluators have read-only tools. Artifact evaluators use copied disposable workspaces, can write only there, and run only bounded package test commands. They never modify target project.
 
 ## Recipe system
 
-`recipe-resolver` finds bundled recipe first, then project-local recipe. `recipe.json` is validated before launch. Recipe prompt supplies domain behavior; runtime supplies generic control plane.
+`recipe-resolver` finds bundled recipe first, then project-local recipe. `recipe.json` is validated before launch. Recipe prompt supplies domain behavior; capability plan supplies selected execution privileges; runtime supplies generic control plane.
 
 Preflight runs before outer Pi starts:
 
@@ -104,7 +104,8 @@ Redacted ledger remains outside outer-run directory.
 
 Safety enforcement is runtime code, not model instruction alone:
 
-- recipe manifest forbids automatic replay;
+- recipe manifest forbids automatic replay and arbitrary execution privileges;
+- capability plan selects outer tools/extensions and worker kinds;
 - worker guard blocks mutating Git commands;
 - direct candidate model selection is explicit;
 - answer evaluator toolset is read-only;

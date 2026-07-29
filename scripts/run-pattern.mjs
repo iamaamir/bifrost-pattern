@@ -11,6 +11,7 @@ import { collectRecipeInputs, renderInitialMessage, resolveRecipeInputs } from "
 import { buildRepoIndex } from "./repo-index.mjs";
 import { ensureAstGrep } from "./bootstrap-ast-grep.mjs";
 import { buildModelInventory } from "./model-inventory.mjs";
+import { resolveCapabilityPlan, selectOuterTools } from "./capability-plan.mjs";
 
 const [recipe, possibleProject, ...remaining] = process.argv.slice(2);
 const projectArg = possibleProject && !possibleProject.startsWith("-") ? possibleProject : ".";
@@ -38,6 +39,7 @@ try {
   process.exit(1);
 }
 const manifest = resolvedRecipe.manifest;
+const capabilityPlan = resolveCapabilityPlan(manifest);
 const inputEntries = options("--input");
 const recipeInputs = dryRun
   ? resolveRecipeInputs(manifest, inputEntries)
@@ -202,15 +204,11 @@ Run artifact directory: ${runDirectory}
 Recipe inputs: ${JSON.stringify(recipeInputs)}
 Preflight artifacts: ${JSON.stringify(preflightArtifacts)}
 Use Pi-subagents subagent tool for repository work. Its policy pins every child to target project and disables project artifacts. Do not use local run directory as a substitute for project evidence.`;
-const outerTools = option("--outer-tools") ?? "read,grep,find,ls,write,edit,bash,bifrost_create_role,bifrost_build_config_fragment,bifrost_create_evaluation_workspace,bifrost_complete_model_foundry,subagent,subagent_wait";
+const outerTools = selectOuterTools(capabilityPlan, option("--outer-tools")).join(",");
+const extensionArgs = capabilityPlan.outer.extensions.flatMap(name => ["--extension", join(root, "extensions", `${name}.ts`)]);
 const command = [
   "--model", model,
-  "--extension", join(root, "extensions", "bifrost-subagent-policy.ts"),
-  "--extension", join(root, "extensions", "role-compiler.ts"),
-  "--extension", join(root, "extensions", "model-foundry-policy.ts"),
-  "--extension", join(root, "extensions", "model-foundry-workspace.ts"),
-  "--extension", join(root, "extensions", "model-foundry-proposal.ts"),
-  "--extension", join(root, "extensions", "model-foundry-cleanup.ts"),
+  ...extensionArgs,
   "--tools", outerTools,
   "--append-system-prompt", outerPrompt,
   "--session-dir", join(runDirectory, "sessions")
@@ -239,7 +237,8 @@ const child = spawn("pi", command, {
     PI_CODING_AGENT_DIR: outerAgentDirectory,
     PI_SUBAGENT_EXTRA_AGENT_DIRS: join(root, "agents"),
     BIFROST_PATTERN_RUN_ID: id,
-    BIFROST_PATTERN_EVENT_PATH: eventPath
+    BIFROST_PATTERN_EVENT_PATH: eventPath,
+    BIFROST_PATTERN_CAPABILITY_PLAN: JSON.stringify(capabilityPlan)
   }
 });
 
@@ -264,7 +263,7 @@ function finalize(code) {
     };
   });
   const activities = events.filter(event => event.type !== "worker_terminal");
-  const directWorkers = new Set(manifest.directWorkers ?? []);
+  const directWorkers = new Set(Object.keys(capabilityPlan.directWorkers));
   for (const worker of workers) if (directWorkers.has(worker.agent)) worker.routing = { verified: Boolean(worker.model), direct: true, model: worker.model };
   const failedWorkers = workers.filter(worker => worker.success !== true || worker.routing.verified !== true);
   const outcome = code === 0 && workers.length > 0 && failedWorkers.length === 0 ? "completed" : "failed";

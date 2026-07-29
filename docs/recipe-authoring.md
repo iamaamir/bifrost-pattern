@@ -99,13 +99,25 @@ Only supported deterministic capabilities are allowed:
 
 Use when recipe reads Bifrost configuration as evidence. Model Foundry uses this. Interactive runs offer explicit setup or exit; dry runs fail with `bifrost-pattern init` guidance. Never silently modify Bifrost configuration from a recipe.
 
-### Direct candidate workers
+### Selected capabilities
+
+Recipes default to `standard` outer and standard Bifrost-routed workers. They cannot declare arbitrary tools, extensions, or execution privileges.
 
 ```json
-{ "directWorkers": ["my-evaluator"] }
+{
+  "capabilities": {
+    "outer": "foundry",
+    "directWorkers": {
+      "bifrost-model-evaluator": "answer-evaluator",
+      "bifrost-model-artifact-evaluator": "artifact-evaluator"
+    }
+  }
+}
 ```
 
-Use only for bounded evaluations that require exact `model` selection rather than target-project routing. Direct worker calls must provide explicit model, remain side-effect bounded, and record direct routing evidence.
+Selected outer kinds: `standard`, `foundry`. Selected direct-worker kinds: `answer-evaluator`, `artifact-evaluator`. Direct worker kinds require `outer: "foundry"`; unknown kinds fail validation. `directWorkers` is not supported.
+
+Use direct workers only for bounded evaluations requiring exact `model` selection rather than target-project routing. Direct calls require explicit model, remain side-effect bounded, and record direct routing evidence. New privileged kinds require runtime code, tests, and documentation; recipe JSON alone cannot grant them.
 
 ### Terminal cleanup
 
@@ -138,7 +150,7 @@ These are non-negotiable:
 - Target project changes require explicit user approval and outer-owned integration.
 - Generated role files live under `.pi/bifrost-patterns/agents/`.
 - Do not add hidden installs, global installs, cloud dependencies, or automatic provider calls.
-- Keep architecture/UI advice advisory. Enforce safety, evidence integrity, valid paths, and valid JSON only.
+- Keep architecture/UI advice advisory. Enforce safety, evidence integrity, selected capabilities, valid paths, and valid JSON only.
 
 ## Validate
 
