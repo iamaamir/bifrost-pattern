@@ -20,7 +20,7 @@ test("lists bundled and project recipes for picker", () => {
   const available = listAvailableRecipes("/Users/mak/git/bifrost-patterns", project);
   assert.ok(available.some(recipe => recipe.id === "repo-onboarding"));
   assert.ok(available.some(recipe => recipe.id === "project-only"));
-  assert.equal(recipePickerRows(available).some(row => row.includes("project-only")), true);
+  assert.equal(recipePickerRows(available).includes("project-only"), true);
 });
 
 test("selects recipe via fzf when TTY available", async () => {

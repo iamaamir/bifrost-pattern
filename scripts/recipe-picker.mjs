@@ -3,7 +3,7 @@ import readline from "node:readline/promises";
 import { listAvailableRecipes } from "./recipe-resolver.mjs";
 
 export function recipePickerRows(recipes) {
-  return recipes.map(recipe => `${recipe.id}  ${recipe.source ?? "unknown"}`);
+  return recipes.map(recipe => recipe.id);
 }
 
 export async function chooseRecipe({ root, project, stdin = process.stdin, stdout = process.stdout, spawn = spawnSync }) {

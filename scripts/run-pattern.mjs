@@ -14,6 +14,7 @@ import { buildModelInventory } from "./model-inventory.mjs";
 import { resolveCapabilityPlan, selectOuterTools } from "./capability-plan.mjs";
 import { loadOrchestratorProfile, saveOrchestratorModel } from "./orchestrator-profile.mjs";
 import { createPatternStore } from "./pattern-store.mjs";
+import { createRunMonitor } from "./run-monitor.mjs";
 import { chooseRecipe } from "./recipe-picker.mjs";
 
 const rawArgs = process.argv.slice(2);
@@ -164,6 +165,7 @@ mkdirSync(outerDirectory, { recursive: true });
 mkdirSync(join(outerDirectory, ".pi"), { recursive: true });
 writeFileSync(join(outerDirectory, ".pi", "bifrost.json"), `${JSON.stringify({ enabled: false }, null, 2)}\n`);
 mkdirSync(ledgerDirectory, { recursive: true });
+const monitor = createRunMonitor({ runDirectory, projectPath: project, recipe, outerModel: model, recipeInputs, preflightArtifacts: {} });
 const preflightArtifacts = {};
 if (!dryRun) for (const step of manifest.preflight ?? []) {
   if (step.capability === "repo-index") {
@@ -172,7 +174,21 @@ if (!dryRun) for (const step of manifest.preflight ?? []) {
     mkdirSync(dirname(output), { recursive: true });
     writeFileSync(output, `${JSON.stringify(index, null, 2)}\n`, { mode: 0o600 });
     preflightArtifacts[step.capability] = output;
-    console.log(`Preflight repo index: ${output} (${index.cacheHit ? "cache hit" : "built"}; ast-grep ${index.capabilities.astGrep.status})`);
+    monitor.record("preflight.repo-index", {
+      output,
+      cacheHit: index.cacheHit,
+      git: index.git,
+      astGrep: index.capabilities.astGrep,
+      summary: index.summary,
+      entryCandidates: index.entryCandidates.length,
+      testCandidates: index.testCandidates.length,
+      snapshotFingerprint: index.snapshotFingerprint,
+    });
+    monitor.update({
+      preflightArtifacts,
+      bootstrap: { git: index.git, astGrep: index.capabilities.astGrep, repoIndex: { cacheHit: index.cacheHit, snapshotFingerprint: index.snapshotFingerprint } },
+    });
+    console.log(`Preflight repo index: ${output} (${index.cacheHit ? "cache hit" : "built"}; git ${index.git.shortSha} ${index.git.branch}${index.git.dirty ? " dirty" : ""}; ast-grep ${index.capabilities.astGrep.status})`);
   }
   if (step.capability === "model-inventory") {
     const output = join(runDirectory, step.output);
@@ -180,6 +196,12 @@ if (!dryRun) for (const step of manifest.preflight ?? []) {
     mkdirSync(dirname(output), { recursive: true });
     writeFileSync(output, `${JSON.stringify(inventory, null, 2)}\n`, { mode: 0o600 });
     preflightArtifacts[step.capability] = output;
+    monitor.record("preflight.model-inventory", {
+      output,
+      candidateCount: inventory.candidates.length,
+      tiers: inventory.tiers,
+    });
+    monitor.update({ preflightArtifacts });
     console.log(`Preflight model inventory: ${output} (${inventory.candidates.length} configured candidates)`);
   }
 }
@@ -249,6 +271,13 @@ console.log(`\nPatterns run: ${runDirectory}`);
 console.log(`Outer model: ${model}`);
 console.log("Workers load target project's normal Pi/Bifrost resources.");
 console.log("Outer loads Bifrost disabled; workers load target-project Bifrost configuration.\n");
+monitor.record("outer.ready", {
+  model,
+  recipeInputs,
+  outerTools: outerTools ? outerTools.split(",").filter(Boolean) : [],
+  capabilityKinds: { outer: capabilityPlan.outer.kind ?? capabilityPlan.outer, directWorkers: Object.keys(capabilityPlan.directWorkers) },
+});
+monitor.update({ outerModel: model, recipeInputs, preflightArtifacts });
 
 if (dryRun) {
   console.log(`Dry run: (cwd ${outerDirectory}) pi ${command.map(arg => JSON.stringify(arg)).join(" ")}`);
@@ -297,7 +326,9 @@ function finalize(code) {
   for (const worker of workers) if (directWorkers.has(worker.agent)) worker.routing = { verified: Boolean(worker.model), direct: true, model: worker.model };
   const failedWorkers = workers.filter(worker => worker.success !== true || worker.routing.verified !== true);
   const outcome = code === 0 && workers.length > 0 && failedWorkers.length === 0 ? "completed" : "failed";
+  monitor.finalize({ outcome, workers, routes, activities, routingVerified: failedWorkers.length === 0, failedWorkers: failedWorkers.map(worker => ({ agent: worker.agent, runId: worker.runId, routingVerified: worker.routing.verified })) });
   writeFileSync(ledgerPath, `${JSON.stringify({ runId: id, recipe, startedAt: JSON.parse(readFileSync(ledgerPath, "utf8")).startedAt, endedAt: new Date().toISOString(), outerModel: model, workers, activities, routes, routingVerified: failedWorkers.length === 0, outcome }, null, 2)}\n`);
+  console.log(`Monitor summary: ${monitor.jsonPath}`);
   if (manifest.cleanup?.onTerminal === "run-artifacts") store.runs.cleanup(id);
   process.exit(code ?? 1);
 }

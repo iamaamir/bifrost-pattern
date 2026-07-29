@@ -43,6 +43,10 @@ Outer runs from isolated profile. Runner preserves user extensions and Pi-subage
 
 If runner cannot launch in your environment, use [`prompts/orchestrator.md`](prompts/orchestrator.md) plus role prompts manually. Orchestrator alone reviews, integrates, and performs mutating Git operations after worker evidence.
 
+This recipe now seeds a preflight `repo-index` with git SHA, branch, and AST/graph evidence, then uses it as graph-first bootstrap. Workers get a tiny task pack instead of cold-start discovery. Each run also writes `monitor.json` and `monitor.jsonl` under `.pi/bifrost-patterns/runs/<run-id>/` so you can inspect bootstrap, preflight, and completion without extra commands.
+
+For the memory and bootstrap design behind this recipe, see [`docs/repo-memory-bootstrap.md`](../../docs/repo-memory-bootstrap.md).
+
 ## Routing intent
 
 Intent is a **hint**, not a forced model:

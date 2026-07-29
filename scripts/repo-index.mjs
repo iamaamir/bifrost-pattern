@@ -74,7 +74,30 @@ function directoryCounts(paths) {
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 80).map(([path, files]) => ({ path, files }));
 }
 
+function gitSnapshot(project, run) {
+  const head = run("git", ["rev-parse", "HEAD"], { cwd: project, encoding: "utf8" });
+  if (head?.status !== 0) return { status: "unavailable", fingerprint: hash("git:unavailable") };
+  const branch = run("git", ["branch", "--show-current"], { cwd: project, encoding: "utf8" });
+  const status = run("git", ["status", "--porcelain=v1"], { cwd: project, encoding: "utf8" });
+  const dirtyPaths = status?.status === 0
+    ? String(status.stdout ?? "").trim().split("\n").filter(Boolean).map(line => line.slice(3)).slice(0, 80)
+    : [];
+  const sha = String(head.stdout ?? "").trim();
+  const branchName = branch?.status === 0 ? String(branch.stdout ?? "").trim() || "detached" : "unavailable";
+  const dirty = dirtyPaths.length > 0;
+  return {
+    status: "available",
+    sha,
+    shortSha: sha.slice(0, 7),
+    branch: branchName,
+    dirty,
+    dirtyPaths,
+    fingerprint: hash(JSON.stringify({ sha, dirty })),
+  };
+}
+
 export function buildRepoIndex({ project, cachePath, run = spawnSync, astGrepCommand }) {
+  const git = gitSnapshot(project, run);
   const paths = filesUnder(project);
   const languages = {};
   const fingerprints = [];
@@ -89,10 +112,11 @@ export function buildRepoIndex({ project, cachePath, run = spawnSync, astGrepCom
   const fingerprint = hash(fingerprints.join("\n"));
   const astGrep = astGrepOutline(project, run, astGrepCommand);
   const capabilityFingerprint = hash(JSON.stringify({ status: astGrep.status, version: astGrep.version }));
+  const snapshotFingerprint = hash(JSON.stringify({ fingerprint, capabilityFingerprint, gitFingerprint: git.fingerprint }));
   if (existsSync(cachePath)) {
     try {
       const cached = JSON.parse(readFileSync(cachePath, "utf8"));
-      if (cached.fingerprint === fingerprint && cached.capabilityFingerprint === capabilityFingerprint) return { ...cached, cacheHit: true };
+      if (cached.snapshotFingerprint === snapshotFingerprint) return { ...cached, cacheHit: true };
     } catch { /* rebuild corrupt cache */ }
   }
   const name = path => basename(path).toLowerCase();
@@ -102,7 +126,9 @@ export function buildRepoIndex({ project, cachePath, run = spawnSync, astGrepCom
     version: 1,
     fingerprint,
     capabilityFingerprint,
+    snapshotFingerprint,
     cacheHit: false,
+    git,
     summary: { files: paths.length, languages, directories: directoryCounts(paths) },
     manifests: { package: readPackage(project), configFiles: paths.filter(path => /(?:^|\/)(?:package|tsconfig|vite\.config|next\.config|docker-compose|Makefile|README)/i.test(path)).slice(0, 40) },
     entryCandidates,

@@ -140,3 +140,4 @@ See [`docs/delegation-tuning.md`](docs/delegation-tuning.md) for local effort-tu
 
 - [Recipe authoring](docs/recipe-authoring.md) — manifest, prompt, safety, validation, and lifecycle constraints.
 - [Architecture](docs/architecture.md) — runtime topology, ownership boundaries, evidence, cleanup, and safety model.
+- [Repo memory + bootstrap](docs/repo-memory-bootstrap.md) — graph-first bootstrap, durable repo memory, token savings, and worker handoff.

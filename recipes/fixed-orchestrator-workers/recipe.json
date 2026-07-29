@@ -3,17 +3,21 @@
   "version": 1,
   "status": "experimental",
   "runtime": "pi",
-  "summary": "A fixed-model orchestrator composes task-specific Pi workers routed by target-project Bifrost.",
+  "summary": "A fixed-model orchestrator uses preflight repo index and task-specific Pi workers routed by target-project Bifrost.",
   "outer": {
     "prompt": "prompts/orchestrator.md",
     "model": "explicit"
   },
+  "preflight": [
+    { "capability": "repo-index", "output": "fixed-orchestrator-workers/repo-index.json" }
+  ],
   "requires": {
     "bifrost": "Installed and configured in target project workers",
     "manualAssumptions": [
       "Outer orchestrator can run with Bifrost disabled.",
       "Worker Pi sessions load target project's Bifrost config.",
-      "Observed model selection can be inspected through local lifecycle/debug evidence."
+      "Observed model selection can be inspected through local lifecycle/debug evidence.",
+      "Repo-index is orientation only; workers must re-check source paths before claims or edits."
     ]
   },
   "safety": {
@@ -24,6 +28,7 @@
   "acceptance": [
     "Outer orchestrator remains on explicitly chosen model for full run.",
     "Each accepted worker has correlated local Bifrost route evidence.",
+    "Preflight repo-index seeds graph-first bootstrap and workers reuse it instead of repeating repo discovery.",
     "No worker silently replays failed work.",
     "Run feedback contains no prompt body, credential, or provider response."
   ]
