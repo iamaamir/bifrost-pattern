@@ -20,6 +20,7 @@ Do not turn patterns into a Bifrost orchestration feature.
 - Store no prompt bodies, credentials, provider responses, or telemetry in run feedback.
 - Mark unproven runtime behavior as a manual assumption; do not automate it until a recipe run proves it.
 - Keep recipes runnable/local-first. Do not add cloud services.
+- Recipe JSON may select only runtime capability kinds. It must not grant arbitrary tools, extensions, model bypasses, or workspace writes.
 
 ## Before adding a recipe
 
@@ -28,6 +29,7 @@ Do not turn patterns into a Bifrost orchestration feature.
 3. State outer agent vs worker ownership.
 4. Define failure/no-replay behavior.
 5. Define local feedback and acceptance checks.
+6. Use standard capabilities unless selected runtime kind is necessary; add new privileged kind only with runtime enforcement, tests, and docs.
 
 ## Verification
 
