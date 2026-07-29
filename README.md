@@ -10,27 +10,40 @@ Bifrost remains routing primitive. Pattern owns orchestration, worker lifecycle,
 npm install -g bifrost-pattern
 ```
 
-Bifrost Pattern installs Pi-Bifrost and Pi-subagents project-local when absent. It stops if either extension exists in both user and project scopes.
+`init` explicitly installs/configures Pi-Bifrost when needed. Workflow runs bootstrap Pi-subagents project-local when absent. Both stop when extension exists in both user and project scopes.
 
 ## Initialize Bifrost
 
 For a project without Bifrost:
 
 ```bash
-bifrost-pattern init
+bifrost-pattern init [project-path]
 ```
 
-Fresh setup explicitly asks before project-local install and optional provider probing, then opens interactive Pi in target project. Existing valid setup is left unchanged and opens Pi directly. Use `--no-open` for automation or `--probe` to refresh provider probes.
+Fresh setup explicitly asks before project-local install and optional provider probing, then opens interactive Pi in target project. Existing valid setup is left unchanged and opens Pi directly.
+
+```bash
+bifrost-pattern init . --no-open  # setup/validate without opening Pi
+bifrost-pattern init . --probe    # explicitly refresh provider probe
+```
 
 ## Run
 
 From target project:
 
 ```bash
-bifrost-pattern fixed-orchestrator-workers
+bifrost-pattern fixed-orchestrator-workers [project-path]
 ```
 
-First run probes Bifrost models with consent, then asks for fixed outer `provider/model`. Chosen model is saved in target `.bifrost-patterns.json`.
+If Bifrost setup is missing, workflow asks before setup. It then asks for fixed outer `provider/model`; choice is saved in target `.bifrost-patterns.json`.
+
+```bash
+bifrost-pattern repo-onboarding . --input discoveryScope=source-only
+bifrost-pattern model-foundry . --input specialization=testing
+bifrost-pattern fixed-orchestrator-workers . --orchestrator-model provider/model
+```
+
+Use `--dry-run` to inspect launch command without starting Pi.
 
 ## Model
 
@@ -67,7 +80,7 @@ npx bifrost-pattern model-foundry
 
 `repo-onboarding` creates human guide, `CONTEXT.md`, and accessible interactive HTML/Mermaid architecture-graph drafts. Before Pi opens, runner asks whether to include git history/ADRs; Pi then starts work immediately. It builds a local, cached deterministic repo index so workers target evidence files rather than dump source trees. It asks again before promoting drafts into project docs.
 
-`model-foundry` evaluates only models already present in project Bifrost config against a user-selected or custom work contract. If setup is missing, it offers explicit `init` setup or exit. It produces a local scorecard and additive config proposal, never writes Bifrost config without explicit approval.
+`model-foundry` evaluates only models already present in project Bifrost config against a user-selected or custom work contract. If setup is missing, it offers explicit setup or exit. Candidate work is read-only unless outer selects isolated disposable artifact evaluation. It emits validated additive config fragment, never writes Bifrost config, and removes detailed evaluation artifacts after completion.
 
 ## Add a pattern
 
@@ -91,3 +104,8 @@ npm run delegation:validate
 ```
 
 See [`docs/delegation-tuning.md`](docs/delegation-tuning.md) for local effort-tuning loop.
+
+## Documentation
+
+- [Recipe authoring](docs/recipe-authoring.md) — manifest, prompt, safety, validation, and lifecycle constraints.
+- [Architecture](docs/architecture.md) — runtime topology, ownership boundaries, evidence, cleanup, and safety model.
