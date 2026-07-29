@@ -23,7 +23,7 @@ function readLines(path) {
 function evidenceWorkers(project, store, id, fallback) {
   const terminals = readLines(join(store.root, "runs", `${id}.events.jsonl`)).filter(event => event.type === "worker_terminal");
   if (!terminals.length) return fallback;
-  const routes = readLines(join(project, ".pi", "bifrost-debug.jsonl")).filter(event => event.pattern_run_id === id && event.event === "total");
+  const routes = readLines(join(project, ".pi", "bifrost-debug.jsonl")).filter(event => event.pattern_run_id === id && ["model_selected", "total"].includes(event.event));
   const unique = new Map();
   for (const worker of terminals) unique.set(worker.runId, worker);
   return [...unique.values()].map(worker => {
