@@ -11,7 +11,7 @@ function run(command, commandArgs, capture = false) {
   return execFileSync(command, commandArgs, {
     cwd: root,
     encoding: "utf8",
-    stdio: capture ? ["ignore", "pipe", "inherit"] : "inherit",
+    stdio: capture ? ["ignore", "pipe", "pipe"] : "inherit",
   })?.trim();
 }
 
@@ -32,6 +32,18 @@ function nextVersion(version, bump) {
 function requireCleanTree() {
   const status = run("git", ["status", "--porcelain"], true);
   if (status) throw new Error(`Working tree is not clean:\n${status}`);
+}
+
+function confirmPublished(name, version) {
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
+    try {
+      if (JSON.parse(run("npm", ["view", `${name}@${version}`, "version", "--json"], true)) === version) return;
+    } catch {
+      // npm registry propagation is eventually consistent after publish.
+    }
+    if (attempt < 6) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5_000);
+  }
+  throw new Error(`npm registry did not confirm ${name}@${version} after 30 seconds.`);
 }
 
 function main() {
@@ -61,8 +73,7 @@ function main() {
   run("git", ["push", "origin", tag]);
   run("npm", ["publish", "--access", "public"]);
   run("gh", ["release", "create", tag, "--title", tag, "--generate-notes"]);
-  const published = run("npm", ["view", `${pkg.name}@${version}`, "version", "--json"], true);
-  if (JSON.parse(published) !== version) throw new Error(`npm registry did not confirm ${pkg.name}@${version}.`);
+  confirmPublished(pkg.name, version);
   console.log(`Released ${pkg.name}@${version}.`);
 }
 
