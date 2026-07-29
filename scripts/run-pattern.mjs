@@ -12,6 +12,7 @@ import { buildRepoIndex } from "./repo-index.mjs";
 import { ensureAstGrep } from "./bootstrap-ast-grep.mjs";
 import { buildModelInventory } from "./model-inventory.mjs";
 import { resolveCapabilityPlan, selectOuterTools } from "./capability-plan.mjs";
+import { loadOrchestratorProfile, saveOrchestratorModel } from "./orchestrator-profile.mjs";
 
 const [recipe, possibleProject, ...remaining] = process.argv.slice(2);
 const projectArg = possibleProject && !possibleProject.startsWith("-") ? possibleProject : ".";
@@ -81,8 +82,7 @@ if (bootstrap.needsProbeConsent) {
   bootstrap = ensureBifrost({ project, agentDirectory: sourceAgentDirectory, approveProbe: true });
 }
 
-const profilePath = join(project, ".bifrost-patterns.json");
-const profile = existsSync(profilePath) ? JSON.parse(readFileSync(profilePath, "utf8")) : {};
+const profile = loadOrchestratorProfile(project);
 let model = option("--orchestrator-model") ?? profile.patterns?.[recipe]?.orchestratorModel;
 
 if (!model) {
@@ -101,14 +101,7 @@ if (!model) {
     console.error("An explicit orchestrator model is required.");
     process.exit(1);
   }
-  const next = {
-    ...profile,
-    patterns: {
-      ...profile.patterns,
-      [recipe]: { ...profile.patterns?.[recipe], orchestratorModel: model }
-    }
-  };
-  writeFileSync(profilePath, `${JSON.stringify(next, null, 2)}\n`);
+  const profilePath = saveOrchestratorModel({ project, recipe, model });
   console.log(`Saved orchestrator model in ${profilePath}`);
 }
 
