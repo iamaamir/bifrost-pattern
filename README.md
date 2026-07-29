@@ -105,6 +105,16 @@ npm run recipe:validate
 npm run delegation:validate
 ```
 
+## Release
+
+Release from clean `main`. Script validates tests and recipes, bumps version, commits/tag/pushes, publishes npm, creates GitHub release, then confirms registry version.
+
+```bash
+npm run release -- --patch --publish
+npm run release -- --minor --publish
+npm run release -- --major --publish
+```
+
 See [`docs/delegation-tuning.md`](docs/delegation-tuning.md) for local effort-tuning loop.
 
 ## Documentation

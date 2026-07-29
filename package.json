@@ -36,7 +36,8 @@
     "recipe:validate": "node scripts/validate-recipe.mjs",
     "delegation:validate": "node scripts/validate-delegation-scenarios.mjs",
     "run:new": "node scripts/start-run.mjs",
-    "pattern:run": "node scripts/run-pattern.mjs"
+    "pattern:run": "node scripts/run-pattern.mjs",
+    "release": "node scripts/release.mjs"
   },
   "dependencies": {
     "@earendil-works/pi-ai": "^0.82.1",
