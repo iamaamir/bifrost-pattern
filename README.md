@@ -51,7 +51,7 @@ Use `--dry-run` to inspect launch command without starting Pi.
 bifrost-pattern runs              # recent-first fzf picker; numbered fallback
 bifrost-pattern runs latest       # newest run
 bifrost-pattern runs <run-id>     # exact run
-bifrost-pattern runs --watch      # refresh active run view
+bifrost-pattern runs --watch      # refresh active run view; q/Esc/Ctrl+C exit
 ```
 
 Dashboard reads redacted local ledgers only. Configure built-in field order in `.pi/bifrost-patterns/dashboard.json`:

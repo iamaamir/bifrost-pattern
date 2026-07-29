@@ -25,6 +25,10 @@ function directWorkerKind(agent: string | undefined) {
 }
 
 export default function (pi: ExtensionAPI) {
+  pi.events.on("subagent:async-started", (data: Record<string, unknown>) => {
+    record({ type: "worker_started", runId: data.id ?? data.runId, agent: data.agent, state: data.state, model: data.model });
+  });
+
   pi.events.on("subagent:async-complete", (data: Record<string, unknown>) => {
     record({
       type: "worker_terminal",
