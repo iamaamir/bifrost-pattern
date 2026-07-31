@@ -1,7 +1,3 @@
-runs/*
-!runs/.gitkeep
-node_modules/
-
 # AMQ Bridge
 .agent-mail/
 .amq-bridge/
@@ -12,3 +8,7 @@ node_modules/
 
 # ADR working docs
 docs/adr/
+
+# Build artifacts
+node_modules/
+runs/
