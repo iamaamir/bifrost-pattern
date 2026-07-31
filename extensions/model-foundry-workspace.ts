@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import { Type } from "@earendil-works/pi-ai";
 import { defineTool, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -20,7 +20,6 @@ const workspaceTool = defineTool({
       mkdirSync(destination, { recursive: true });
       cpSync(project, destination, { recursive: true, filter: path => ![".git", ".pi", "node_modules", "dist", "build", "coverage"].includes(basename(path)) });
       mkdirSync(join(destination, ".pi"), { recursive: true });
-      writeFileSync(join(destination, ".pi", "bifrost.json"), '{"enabled":false}\n', { mode: 0o600 });
       return { content: [{ type: "text", text: `Created disposable evaluation workspace: ${destination}` }] };
     } catch (error) {
       return { content: [{ type: "text", text: `Workspace creation blocked: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
